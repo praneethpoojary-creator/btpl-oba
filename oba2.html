@@ -712,22 +712,64 @@ function buildPDFDoc(){
 }
 
 function doPreview(){
-  const {doc, filename} = buildPDFDoc();
-  const blob = doc.output("blob");
-  const url = URL.createObjectURL(blob);
-  document.getElementById("previewFrame").src = url;
-  document.getElementById("uploadStatus").style.display = "none";
-  document.getElementById("modalSubmitBtn").disabled = false;
-  document.getElementById("modalSubmitBtn").textContent = "☁ Submit to Drive";
+  const CPS=["Check for any damages in packing box and honey comb","Verify the product as per OQC checklist","Verify Harness with Harness matrix","Verify Label with Label matrix","Check for any physical damages of PCBA/Harness/Enclosure/Label","Check for outer box label","Check for Quality alert if any"];
+  let cpHTML="";
+  [...document.querySelectorAll("#xbody tr")].forEach((tr,ri)=>{
+    const res=[...tr.querySelectorAll(".ok-grp")].map(g=>{
+      if(g.querySelector(".ok-on")) return "<b style='color:#16a34a'>OK</b>";
+      if(g.querySelector(".nok-on")) return "<b style='color:#dc2626'>NOT OK</b>";
+      return "<span style='color:#aaa'>—</span>";
+    }).join(" | ");
+    cpHTML+=`<tr><td style='padding:5px 8px;border:1px solid #ddd;text-align:center;background:#fffff2;font-weight:bold;'>${ri+1}</td><td style='padding:5px 8px;border:1px solid #ddd;font-size:12px;background:#fffff2;'>${CPS[ri]}</td><td style='padding:5px 8px;border:1px solid #ddd;font-size:11px;background:#fffff2;'>${res}</td></tr>`;
+  });
+  const barcodes=[];
+  for(let i=1;i<=N;i++){const v=(document.getElementById("bc"+i)||{}).value||"";if(v)barcodes.push("S"+i+": "+v);}
+  document.getElementById("previewContent").innerHTML=`
+    <div style="font-family:Arial,sans-serif;font-size:13px;">
+      <div style="background:#1a3a6b;color:#fff;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-weight:bold;">📋 Form Summary</div>
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px;">
+        <b style="color:#1a3a6b;">Basic Info</b><br><br>
+        <table style="width:100%;font-size:13px;">
+          <tr><td style="color:#888;padding:3px 0;width:45%;">Customer</td><td><b>${gv("customer")||"—"}</b></td></tr>
+          <tr><td style="color:#888;padding:3px 0;">Model Name</td><td><b>${gv("modelName")||"—"}</b></td></tr>
+          <tr><td style="color:#888;padding:3px 0;">Part Number</td><td><b>${gv("partNo")||"—"}</b></td></tr>
+          <tr><td style="color:#888;padding:3px 0;">Invoice No.</td><td><b>${gv("invoiceNo")||"—"}</b></td></tr>
+          <tr><td style="color:#888;padding:3px 0;">Quantity</td><td><b>${gv("quantity")||"—"}</b></td></tr>
+          <tr><td style="color:#888;padding:3px 0;">Date</td><td><b>${gv("date")||"—"}</b></td></tr>
+          <tr><td style="color:#888;padding:3px 0;">OBA Done By</td><td><b>${gv("obaBy")||"—"}</b></td></tr>
+          <tr><td style="color:#888;padding:3px 0;">Status</td><td><b>${STATUS==="acc"?"✅ Accepted":STATUS==="rej"?"❌ Rejected":"—"}</b></td></tr>
+        </table>
+      </div>
+      ${barcodes.length>0?`<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px;"><b style="color:#1a3a6b;">Barcodes</b><br><br><div style="font-size:12px;">${barcodes.join(" &nbsp;|&nbsp; ")}</div></div>`:""}
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:10px;overflow-x:auto;">
+        <b style="color:#1a3a6b;">Checkpoint Results</b><br><br>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr>
+            <th style="padding:6px;border:1px solid #ddd;background:#1a3a6b;color:#fff;width:30px;">SL</th>
+            <th style="padding:6px;border:1px solid #ddd;background:#1a3a6b;color:#fff;text-align:left;">Check Point</th>
+            <th style="padding:6px;border:1px solid #ddd;background:#1a3a6b;color:#fff;">Result</th>
+          </tr></thead>
+          <tbody>${cpHTML}</tbody>
+        </table>
+      </div>
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+        <b style="color:#1a3a6b;">Sign Off</b><br><br>
+        <table style="width:100%;font-size:13px;">
+          <tr><td style="color:#888;padding:3px 0;width:45%;">NC Details</td><td><b>${gv("ncDet")||"—"}</b></td></tr>
+          <tr><td style="color:#888;padding:3px 0;">Verified By</td><td><b>${gv("verBy")||"—"}</b></td></tr>
+        </table>
+      </div>
+    </div>`;
+  document.getElementById("uploadStatus").style.display="none";
+  document.getElementById("modalSubmitBtn").disabled=false;
+  document.getElementById("modalSubmitBtn").textContent="☁ Submit to Drive";
   document.getElementById("previewModal").classList.add("active");
-  // store for submit
-  window._pendingPDF = { doc, filename };
+  pendingPDF=buildPDFDoc();
 }
 
 function closePreview(){
   document.getElementById("previewModal").classList.remove("active");
-  document.getElementById("previewFrame").src = "";
-  window._pendingPDF = null;
+  pendingPDF=null;
 }
 
 async function doSubmit(){
