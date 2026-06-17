@@ -1118,9 +1118,10 @@ function gv(id){
   if(id==="partNo"){
     const sel=document.getElementById("partSelect");
     const inp=document.getElementById("partNo");
-    if(sel && sel.style.display!=="none" && sel.value && sel.value!=="Other") return sel.value.trim();
-    if(inp) return inp.value.trim();
-    return "";
+    let val = "";
+    if(sel && sel.style.display!=="none" && sel.value && sel.value!=="Other") val=sel.value.trim();
+    else if(inp) val=inp.value.trim();
+    return val.split(" — ")[0]; // only return part number code
   }
   const e=document.getElementById(id);return e?e.value.trim():"";
 }
