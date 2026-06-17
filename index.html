@@ -541,14 +541,25 @@ function onModelChange(){
 }
 
 function onPartChange(){
-  const sel = document.getElementById("partSelect");
-  const inp = document.getElementById("partNo");
+  const sel  = document.getElementById("partSelect");
+  const inp  = document.getElementById("partNo");
+  const mSel = document.getElementById("modelSelect");
+  const mInp = document.getElementById("modelName");
   if(sel.value==="Other"){
     sel.style.display="none"; inp.style.display="block";
     inp.readOnly=false; inp.style.background=""; inp.style.color="";
     inp.placeholder="Type part number"; inp.value=""; inp.focus();
   } else {
-    inp.value=sel.value;
+    const parts = sel.value.split(" — ");
+    inp.value = parts[0] || sel.value;
+    if(parts[1] && mInp){
+      mSel.style.display="none";
+      mInp.style.display="block";
+      mInp.readOnly=false;
+      mInp.style.background="#fffde7";
+      mInp.style.color="#333";
+      mInp.value=parts[1];
+    }
   }
 }
 
