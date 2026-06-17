@@ -203,9 +203,8 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
 
   </div>
 
-  <!-- Row 1: Model | Customer | Qty | Sampling Note | Date -->
+  <!-- Row 1: Customer | Part Number | Qty | Sampling Note | Date -->
   <div class="x-inforow">
-    <div class="x-cell" style="flex:1.3"><span class="lbl">Model Name :</span><input type="text" id="modelName" placeholder="—"></div>
     <div class="x-cell" style="flex:1.3">
       <span class="lbl">Customer :</span>
       <select id="customerSelect" onchange="onCustomerChange()" style="flex:1;border:none;border-bottom:1.5px solid #aaa;background:transparent;font-size:12px;padding:2px 3px;outline:none;">
@@ -221,14 +220,27 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
       </select>
       <input type="text" id="customer" placeholder="Type customer name" style="flex:1;border:none;border-bottom:1.5px solid #aaa;background:transparent;font-size:12px;padding:2px 3px;outline:none;display:none;">
     </div>
+    <div class="x-cell" style="flex:1.3">
+      <span class="lbl">Part Number :</span>
+      <select id="partSelect" onchange="onPartChange()" style="flex:1;border:none;border-bottom:1.5px solid #aaa;background:transparent;font-size:12px;padding:2px 3px;outline:none;display:none;">
+        <option value="">-- Select Customer First --</option>
+      </select>
+      <input type="text" id="partNo" placeholder="—" style="flex:1;border:none;border-bottom:1.5px solid #aaa;background:#f9f9f9;font-size:12px;padding:2px 3px;outline:none;color:#888;">
+    </div>
     <div class="x-cell" style="flex:0.65"><span class="lbl">Quantity :</span><input type="number" id="quantity" placeholder="e.g.300" oninput="onQty()"></div>
     <div class="x-cell" style="flex:1.8;"><span class="note-text"><b>Sampling Size :</b><br>Lot upto 500 &rarr; 5 Nos<br>Lot above 1000 &rarr; 10 Nos</span></div>
     <div class="x-cell" style="flex:0.85"><span class="lbl">Date :</span><input type="date" id="date" readonly style="color:#1a3a6b;font-weight:700;background:transparent;border:none;border-bottom:1.5px solid #aaa;font-size:12px;padding:2px 3px;"></div>
   </div>
 
-  <!-- Row 2: Part No | Invoice | Lot size | Inspection Status | OBA done by -->
+  <!-- Row 2: Model Name | Invoice | Lot size | Inspection Status | OBA done by -->
   <div class="x-inforow">
-    <div class="x-cell" style="flex:1.3"><span class="lbl">Part Number :</span><input type="text" id="partNo" placeholder="—"></div>
+    <div class="x-cell" style="flex:1.3">
+      <span class="lbl">Model Name :</span>
+      <select id="modelSelect" onchange="onModelChange()" style="flex:1;border:none;border-bottom:1.5px solid #aaa;background:transparent;font-size:12px;padding:2px 3px;outline:none;display:none;" disabled>
+        <option value="">-- Select Customer First --</option>
+      </select>
+      <input type="text" id="modelName" placeholder="Auto-filled from part" style="flex:1;border:none;border-bottom:1.5px solid #aaa;background:#f9f9f9;font-size:12px;padding:2px 3px;outline:none;color:#888;">
+    </div>
     <div class="x-cell" style="flex:1.3"><span class="lbl">Invoice Number :</span><input type="text" id="invoiceNo" placeholder="—"></div>
     <div class="x-cell" style="flex:0.65"><span class="lbl">Lot Size :</span><input type="text" id="lotVal" readonly style="color:#1a3a6b;font-weight:700;"></div>
     <div class="x-cell" style="flex:1.8;gap:8px;flex-wrap:wrap;">
