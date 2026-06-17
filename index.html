@@ -516,13 +516,12 @@ function onCustomerChange(){
 
   if(chosen && CUSTOMER_DATA[chosen]){
     const data = CUSTOMER_DATA[chosen];
-    // Show part number dropdown
+    // Show part number dropdown - only show part number code (before —)
     pSel.innerHTML = '<option value="">-- Select Part Number --</option>';
     data.parts.forEach(p => {
       const o=document.createElement("option");
-      o.value=p;
-      // Show only part number (before —) in dropdown
-      o.textContent=p;
+      o.value=p; // keep full value with description for auto-fill
+      o.textContent=p.split(" — ")[0]; // show only part number code
       pSel.appendChild(o);
     });
     pSel.style.display="block";
