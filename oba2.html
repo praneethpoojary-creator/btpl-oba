@@ -228,6 +228,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
   <!-- Row 2: Part No | Invoice | Lot size | Inspection Status | OBA done by -->
   <div class="x-inforow">
     <div class="x-cell" style="flex:1.3"><span class="lbl">Part Number :</span><input type="text" id="partNo" placeholder="—"></div>
+    <div class="x-cell" style="flex:2"><span class="lbl">Part Description :</span><input type="text" id="partDesc" placeholder="Auto-filled from part number"></div>
     <div class="x-cell" style="flex:1.3"><span class="lbl">Invoice Number :</span><input type="text" id="invoiceNo" placeholder="—"></div>
     <div class="x-cell" style="flex:0.65"><span class="lbl">Lot Size :</span><input type="text" id="lotVal" readonly style="color:#1a3a6b;font-weight:700;"></div>
     <div class="x-cell" style="flex:1.8;gap:8px;flex-wrap:wrap;">
@@ -911,7 +912,7 @@ async function uploadToDrive({doc, filename}){
       filename,
       gv("modelName"),
       gv("customer"),
-      gv("partNo"),
+      gv("partNo") + (document.getElementById("partDesc")&&document.getElementById("partDesc").value ? " — "+document.getElementById("partDesc").value : ""),
       gv("quantity"),
       gv("date"),
       gv("obaBy"),
