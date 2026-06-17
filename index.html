@@ -811,9 +811,15 @@ async function uploadToDrive({doc, filename}){
     // 2. Log to Google Sheet
     const now = new Date().toLocaleString();
     const row = [[
-      now, filename,
-      gv("modelName"), gv("customer"), gv("partNo"),
-      gv("quantity"), gv("date"), gv("obaBy"),
+      "",  // Sr No - auto filled by sheet
+      now,
+      filename,
+      gv("modelName"),
+      gv("customer"),
+      gv("partNo"),
+      gv("quantity"),
+      gv("date"),
+      gv("obaBy"),
       STATUS==="acc"?"Accepted":STATUS==="rej"?"Rejected":"",
       fileLink
     ]];
@@ -827,15 +833,15 @@ async function uploadToDrive({doc, filename}){
     if(!hData.values){
       // Add header first
       await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A1:J1?valueInputOption=RAW`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A1:K1?valueInputOption=RAW`,
         { method:"PUT", headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-          body: JSON.stringify({values:[["Timestamp","File Name","Model Name","Customer","Part Number","Quantity","Date","OBA Done By","Status","Drive Link"]]})
+          body: JSON.stringify({values:[["Sr No.","Timestamp","File Name","Model Name","Customer","Part Number","Quantity","Date","OBA Done By","Status","Drive Link"]]})
         }
       );
     }
 
     await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A:J:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A:K:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
       { method:"POST", headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
         body: JSON.stringify({values: row})
       }
