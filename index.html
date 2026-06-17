@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BTPL - Out of Box Audit Checklist</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; color: #111; }
@@ -754,6 +755,27 @@ function setBtns(disabled, label){
   });
 }
 
+// ── Google Drive + Sheets Direct API ──────────────────────────
+const SCRIPT_URL      = "https://script.google.com/macros/s/AKfycbxYRtzD0hxyKOqYWWxHe9KPgpQPL4UdfiSV4wSlZEpdYG4mgOTDRfWxaviMQJouZKAZpA/exec";
+const FOLDER_URL      = "https://drive.google.com/drive/folders/1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd";
+
+function setStatus(msg, type, html){
+  const d = document.getElementById("uploadStatus");
+  if(!d) return;
+  d.style.display = "block";
+  const bg = {info:"#eff6ff", ok:"#f0fdf4", err:"#fef2f2"};
+  const cl = {info:"#1e40af", ok:"#166534", err:"#dc2626"};
+  d.style.background = bg[type]||bg.info;
+  d.style.color = cl[type]||cl.info;
+  if(html) d.innerHTML = msg; else d.textContent = msg;
+}
+function setBtns(disabled, label){
+  ["submitBtn","modalSubmitBtn"].forEach(id=>{
+    const b = document.getElementById(id);
+    if(b){ b.disabled = disabled; b.textContent = label; }
+  });
+}
+
 async function uploadToDrive({doc, filename}){
   setStatus("⏳ Uploading to Google Drive...", "info");
   setBtns(true, "⏳ Uploading...");
@@ -771,29 +793,35 @@ async function uploadToDrive({doc, filename}){
       status:    STATUS === "acc" ? "Accepted" : STATUS === "rej" ? "Rejected" : ""
     });
 
-    // Use no-cors fetch — Apps Script handles it
-    await fetch(SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: payload
+    // Send via iframe POST (works with Apps Script, no CORS issues)
+    await new Promise((resolve) => {
+      const iid = "uf_" + Date.now();
+      const ifr = document.createElement("iframe");
+      ifr.name = iid; ifr.style.display = "none";
+      document.body.appendChild(ifr);
+      const frm = document.createElement("form");
+      frm.method = "POST"; frm.action = SCRIPT_URL;
+      frm.target = iid; frm.style.display = "none";
+      const inp = document.createElement("input");
+      inp.type = "hidden"; inp.name = "payload"; inp.value = payload;
+      frm.appendChild(inp);
+      document.body.appendChild(frm);
+      frm.submit();
+      ifr.onload = () => {
+        setTimeout(()=>{ try{document.body.removeChild(frm);document.body.removeChild(ifr);}catch(e){} resolve(); }, 500);
+      };
+      setTimeout(()=>{ try{document.body.removeChild(frm);document.body.removeChild(ifr);}catch(e){} resolve(); }, 10000);
     });
 
-    // Wait for Apps Script to process
-    await new Promise(r => setTimeout(r, 4000));
-
     window.open(FOLDER_URL, "_blank");
-    setStatus(
-      '✅ <b>' + filename + '</b> saved to Google Drive! &nbsp;' +
-      '<a href="' + FOLDER_URL + '" target="_blank" style="color:#166534;font-weight:700;">📂 Open Folder ↗</a>',
-      "ok", true
-    );
+    setStatus('✅ <b>'+filename+'</b> saved to Google Drive! &nbsp;<a href="'+FOLDER_URL+'" target="_blank" style="color:#166534;font-weight:700;">📂 Open Folder ↗</a>', "ok", true);
     showToast("✅ Saved to Google Drive!", false);
-    addDriveLog(filename);
     setBtns(false, "☁ Submit to Drive");
+    addDriveLog(filename);
+
   } catch(err){
     console.error(err);
-    setStatus("✘ " + (err.message || "Upload failed."), "err");
+    setStatus("✘ " + (err.message||"Upload failed."), "err");
     showToast("✘ Upload failed!", true);
     setBtns(false, "☁ Submit to Drive");
   }
