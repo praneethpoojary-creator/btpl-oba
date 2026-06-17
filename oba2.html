@@ -700,12 +700,12 @@ function buildPDFDoc(){
   const c4w=aw-c1w-c2w-c3w-c5w;
   let fx=M;
   // Model Name
-  T("Model Name:",fx+1.5,y+3.5,7,GRY,true);
-  T(gv("modelName"),fx+1.5,y+7.5,8,BLK,true);
+  T("Model Name:",fx+1.5,y+3.5,6.5,GRY,true);
+  TW(gv("modelName"),fx+1.5,y+7,6.5,BLK,true,c1w-3);
   fx+=c1w; LN(fx,y,fx,y+r1H);
   // Customer
-  T("Customer:",fx+1.5,y+3.5,7,GRY,true);
-  T(gv("customer"),fx+1.5,y+7.5,8,BLK,true);
+  T("Customer:",fx+1.5,y+3.5,6.5,GRY,true);
+  TW(gv("customer"),fx+1.5,y+7,6.5,BLK,true,c2w-3);
   fx+=c2w; LN(fx,y,fx,y+r1H);
   // Quantity
   T("Quantity",fx+1.5,y+3.5,7,GRY,true);
@@ -726,8 +726,8 @@ function buildPDFDoc(){
   const i4w=aw-i1w-i2w-i3w-i5w;
   fx=M;
   // Part Number
-  T("Part Number:",fx+1.5,y+3.5,7,GRY,true);
-  T(gv("partNo"),fx+1.5,y+7.5,8,BLK,true);
+  T("Part Number:",fx+1.5,y+3.5,6.5,GRY,true);
+  TW(gv("partNo"),fx+1.5,y+7,6.5,BLK,true,i1w-3);
   fx+=i1w; LN(fx,y,fx,y+r2H);
   // Invoice
   T("Invoice",fx+1.5,y+3,7,GRY,true);
