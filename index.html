@@ -771,31 +771,16 @@ async function uploadToDrive({doc, filename}){
       status:    STATUS === "acc" ? "Accepted" : STATUS === "rej" ? "Rejected" : ""
     });
 
-    // Send via iframe form POST — works with Apps Script no-cors
-    await new Promise((resolve) => {
-      const iid = "uf_" + Date.now();
-      const ifr = document.createElement("iframe");
-      ifr.name = iid; ifr.style.display = "none";
-      document.body.appendChild(ifr);
-      const frm = document.createElement("form");
-      frm.method = "POST"; frm.action = SCRIPT_URL;
-      frm.target = iid; frm.style.display = "none";
-      const inp = document.createElement("input");
-      inp.type = "hidden"; inp.name = "payload"; inp.value = payload;
-      frm.appendChild(inp);
-      document.body.appendChild(frm);
-      frm.submit();
-      ifr.onload = () => {
-        setTimeout(() => {
-          try { document.body.removeChild(frm); document.body.removeChild(ifr); } catch(e){}
-          resolve();
-        }, 500);
-      };
-      setTimeout(() => {
-        try { document.body.removeChild(frm); document.body.removeChild(ifr); } catch(e){}
-        resolve();
-      }, 10000);
+    // Use no-cors fetch — Apps Script handles it
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: payload
     });
+
+    // Wait for Apps Script to process
+    await new Promise(r => setTimeout(r, 4000));
 
     window.open(FOLDER_URL, "_blank");
     setStatus(
