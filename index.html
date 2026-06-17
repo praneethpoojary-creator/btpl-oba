@@ -6,6 +6,7 @@
 <title>BTPL - Out of Box Audit Checklist</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; color: #111; }
@@ -736,28 +737,12 @@ async function submitFromPreview(){
 }
 
 // ── Google Drive Upload via Apps Script ───────────────────────
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYRtzD0hxyKOqYWWxHe9KPgpQPL4UdfiSV4wSlZEpdYG4mgOTDRfWxaviMQJouZKAZpA/exec";
+const CLIENT_ID  = "818103137759-42ia4ce8o1o8r1gjuv1buu9n7njf02mm.apps.googleusercontent.com";
+const FOLDER_ID  = "1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd";
 const FOLDER_URL = "https://drive.google.com/drive/folders/1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd";
-
-function setStatus(msg, type, html){
-  const d = document.getElementById("uploadStatus");
-  d.style.display = "block";
-  const bg = {info:"#eff6ff", ok:"#f0fdf4", err:"#fef2f2"};
-  const cl = {info:"#1e40af", ok:"#166534", err:"#dc2626"};
-  d.style.background = bg[type]||bg.info;
-  d.style.color = cl[type]||cl.info;
-  if(html) d.innerHTML = msg; else d.textContent = msg;
-}
-function setBtns(disabled, label){
-  ["submitBtn","modalSubmitBtn"].forEach(id=>{
-    const b = document.getElementById(id);
-    if(b){ b.disabled = disabled; b.textContent = label; }
-  });
-}
-
-// ── Google Drive + Sheets Direct API ──────────────────────────
-const SCRIPT_URL      = "https://script.google.com/macros/s/AKfycbxYRtzD0hxyKOqYWWxHe9KPgpQPL4UdfiSV4wSlZEpdYG4mgOTDRfWxaviMQJouZKAZpA/exec";
-const FOLDER_URL      = "https://drive.google.com/drive/folders/1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd";
+const SHEET_ID   = "1Bd1Zc2cspN_QZq2EEPlrWhLFSH1qPGyFa-dLdLmEXxE";
+const SCOPES     = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets";
+let   gToken     = null;
 
 function setStatus(msg, type, html){
   const d = document.getElementById("uploadStatus");
@@ -776,54 +761,98 @@ function setBtns(disabled, label){
   });
 }
 
+function getToken(){
+  return new Promise((resolve, reject)=>{
+    if(gToken){ resolve(gToken); return; }
+    if(typeof google === "undefined"){ reject(new Error("Google Sign-In not loaded")); return; }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback:(resp)=>{
+        if(resp.error){ reject(new Error(resp.error)); return; }
+        gToken = resp.access_token;
+        resolve(gToken);
+      }
+    });
+    client.requestAccessToken();
+  });
+}
+
 async function uploadToDrive({doc, filename}){
-  setStatus("⏳ Uploading to Google Drive...", "info");
+  setStatus("⏳ Connecting to Google...", "info");
   setBtns(true, "⏳ Uploading...");
   try {
-    const pdfBase64 = doc.output("datauristring").split(",")[1];
-    const payload = JSON.stringify({
-      pdf:       pdfBase64,
-      filename:  filename,
-      modelName: gv("modelName"),
-      customer:  gv("customer"),
-      partNo:    gv("partNo"),
-      quantity:  gv("quantity"),
-      date:      gv("date"),
-      obaBy:     gv("obaBy"),
-      status:    STATUS === "acc" ? "Accepted" : STATUS === "rej" ? "Rejected" : ""
-    });
+    const token = await getToken();
 
-    // Send via iframe POST (works with Apps Script, no CORS issues)
-    await new Promise((resolve) => {
-      const iid = "uf_" + Date.now();
-      const ifr = document.createElement("iframe");
-      ifr.name = iid; ifr.style.display = "none";
-      document.body.appendChild(ifr);
-      const frm = document.createElement("form");
-      frm.method = "POST"; frm.action = SCRIPT_URL;
-      frm.target = iid; frm.style.display = "none";
-      const inp = document.createElement("input");
-      inp.type = "hidden"; inp.name = "payload"; inp.value = payload;
-      frm.appendChild(inp);
-      document.body.appendChild(frm);
-      frm.submit();
-      ifr.onload = () => {
-        setTimeout(()=>{ try{document.body.removeChild(frm);document.body.removeChild(ifr);}catch(e){} resolve(); }, 500);
-      };
-      setTimeout(()=>{ try{document.body.removeChild(frm);document.body.removeChild(ifr);}catch(e){} resolve(); }, 10000);
-    });
+    setStatus("⏳ Uploading PDF to Drive...", "info");
 
+    // 1. Upload PDF to Drive
+    const pdfBlob = doc.output("blob");
+    const meta    = JSON.stringify({ name: filename, mimeType: "application/pdf", parents: [FOLDER_ID] });
+    const form    = new FormData();
+    form.append("metadata", new Blob([meta], {type:"application/json"}));
+    form.append("file", pdfBlob);
+
+    const driveRes = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
+      { method:"POST", headers:{"Authorization":"Bearer "+token}, body:form }
+    );
+    if(!driveRes.ok){ const e=await driveRes.json(); throw new Error(e.error?.message||"Drive upload failed"); }
+    const driveData = await driveRes.json();
+    const fileLink  = driveData.webViewLink || "https://drive.google.com/file/d/"+driveData.id+"/view";
+
+    setStatus("⏳ Saving log to Sheet...", "info");
+
+    // 2. Log to Google Sheet
+    const now = new Date().toLocaleString();
+    const row = [[
+      now, filename,
+      gv("modelName"), gv("customer"), gv("partNo"),
+      gv("quantity"), gv("date"), gv("obaBy"),
+      STATUS==="acc"?"Accepted":STATUS==="rej"?"Rejected":"",
+      fileLink
+    ]];
+
+    // Check if header exists
+    const hRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A1`,
+      { headers:{"Authorization":"Bearer "+token} }
+    );
+    const hData = await hRes.json();
+    if(!hData.values){
+      // Add header first
+      await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A1:J1?valueInputOption=RAW`,
+        { method:"PUT", headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+          body: JSON.stringify({values:[["Timestamp","File Name","Model Name","Customer","Part Number","Quantity","Date","OBA Done By","Status","Drive Link"]]})
+        }
+      );
+    }
+
+    await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A:J:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      { method:"POST", headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+        body: JSON.stringify({values: row})
+      }
+    );
+
+    // 3. Show success
     window.open(FOLDER_URL, "_blank");
-    setStatus('✅ <b>'+filename+'</b> saved to Google Drive! &nbsp;<a href="'+FOLDER_URL+'" target="_blank" style="color:#166534;font-weight:700;">📂 Open Folder ↗</a>', "ok", true);
+    setStatus('✅ <b>'+filename+'</b> saved! &nbsp;<a href="'+fileLink+'" target="_blank" style="color:#166534;font-weight:700;">📂 Open File ↗</a>', "ok", true);
     showToast("✅ Saved to Google Drive!", false);
     setBtns(false, "☁ Submit to Drive");
     addDriveLog(filename);
 
   } catch(err){
     console.error(err);
-    setStatus("✘ " + (err.message||"Upload failed."), "err");
+    if(err.message.includes("popup")||err.message.includes("access_denied")){
+      setStatus("⚠ Sign-in cancelled. Try again.", "err");
+    } else {
+      setStatus("✘ "+err.message, "err");
+    }
     showToast("✘ Upload failed!", true);
     setBtns(false, "☁ Submit to Drive");
+    gToken = null;
   }
 }
 
