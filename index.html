@@ -857,6 +857,22 @@ async function uploadToDrive({doc, filename}){
 }
 
 
+function loadDriveLog(){
+  try {
+    const logs = JSON.parse(localStorage.getItem("obaLogs")||"[]");
+    const list = document.getElementById("driveLogList");
+    const log  = document.getElementById("driveLog");
+    if(!list||!log||logs.length===0) return;
+    log.style.display="block";
+    logs.forEach(l=>{
+      const item=document.createElement("div");
+      item.style.cssText="padding:2px 0;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:11px;";
+      item.innerHTML='<span style="color:#166534;">✔ '+l.file+'</span><span style="color:#888;">'+l.time+'</span>';
+      list.appendChild(item);
+    });
+  } catch(e){}
+}
+
 function addDriveLog(filename){
   try {
     const now = new Date().toLocaleString();
