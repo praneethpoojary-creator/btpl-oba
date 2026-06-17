@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BTPL - Out of Box Audit Checklist v2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -271,6 +270,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
 
 <div class="action-bar">
   <button class="btn-rst" onclick="doReset()">&#8635; Reset</button>
+  <button class="btn-preview" onclick="doPreview()">&#128065; Preview</button>
   <button class="btn-submit" onclick="doSubmit()" id="submitBtn">&#9729; Submit to Drive</button>
 </div>
 <div class="toast" id="toast"></div>
