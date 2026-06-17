@@ -494,21 +494,19 @@ const CUSTOMER_DATA = {
 function onCustomerChange(){
   const sel  = document.getElementById("customerSelect");
   const inp  = document.getElementById("customer");
-  const mSel = document.getElementById("modelSelect");
   const mInp = document.getElementById("modelName");
   const pSel = document.getElementById("partSelect");
   const pInp = document.getElementById("partNo");
 
   if(sel.value === "__other__"){
-    sel.style.display="none"; inp.style.display="block"; inp.readOnly=false;
-    inp.style.background=""; inp.style.color=""; inp.value=""; inp.focus();
-    // reset model/part to free text
-    mSel.style.display="none"; mInp.style.display="block";
-    mInp.readOnly=false; mInp.style.background=""; mInp.style.color="";
-    mInp.placeholder="Enter model name"; mInp.value="";
+    sel.style.display="none"; inp.style.display="block";
+    inp.readOnly=false; inp.style.background=""; inp.style.color="";
+    inp.value=""; inp.focus();
     pSel.style.display="none"; pInp.style.display="block";
     pInp.readOnly=false; pInp.style.background=""; pInp.style.color="";
     pInp.placeholder="Enter part number"; pInp.value="";
+    mInp.value=""; mInp.style.background=""; mInp.readOnly=false;
+    mInp.placeholder="Enter model name";
     return;
   }
 
@@ -518,27 +516,31 @@ function onCustomerChange(){
 
   if(chosen && CUSTOMER_DATA[chosen]){
     const data = CUSTOMER_DATA[chosen];
-    // Populate model dropdown
-    mSel.innerHTML = '<option value="">-- Select Model --</option>';
-    data.models.forEach(m => {
-      const o=document.createElement("option"); o.value=m; o.textContent=m; mSel.appendChild(o);
-    });
-    mSel.style.display="block"; mInp.style.display="none"; mInp.value="";
-    // Populate part dropdown
-    pSel.innerHTML = '<option value="">-- Select Part No. --</option>';
+    // Show part number dropdown
+    pSel.innerHTML = '<option value="">-- Select Part Number --</option>';
     data.parts.forEach(p => {
-      const o=document.createElement("option"); o.value=p; o.textContent=p; pSel.appendChild(o);
+      const o=document.createElement("option");
+      o.value=p;
+      // Show only part number (before —) in dropdown
+      o.textContent=p;
+      pSel.appendChild(o);
     });
-    pSel.style.display="block"; pInp.style.display="none"; pInp.value="";
+    pSel.style.display="block";
+    pInp.style.display="none";
+    pInp.value="";
+    // Clear model name
+    mInp.value="";
+    mInp.style.background="#f9f9f9";
+    mInp.style.color="#888";
+    mInp.placeholder="Auto-filled when part selected";
   } else {
-    mSel.style.display="none"; mInp.style.display="block";
-    mInp.readOnly=false; mInp.style.background=""; mInp.style.color="";
-    mInp.placeholder="Enter model name"; mInp.value="";
     pSel.style.display="none"; pInp.style.display="block";
     pInp.readOnly=false; pInp.style.background=""; pInp.style.color="";
     pInp.placeholder="Enter part number"; pInp.value="";
+    mInp.value=""; mInp.style.background=""; mInp.readOnly=false;
   }
 }
+
 
 function onModelChange(){
   const sel = document.getElementById("modelSelect");
