@@ -715,7 +715,7 @@ function doPreview(){
   const CPS=["Check for any damages in packing box and honey comb","Verify the product as per OQC checklist","Verify Harness with Harness matrix","Verify Label with Label matrix","Check for any physical damages of PCBA/Harness/Enclosure/Label","Check for outer box label","Check for Quality alert if any"];
   let cpHTML="";
   [...document.querySelectorAll("#xbody tr")].forEach((tr,ri)=>{
-    const res=[...tr.querySelectorAll(".ok-grp")].map(g=>{
+    const res=[...tr.querySelectorAll(".okgrp")].map(g=>{
       if(g.querySelector(".ok-on")) return "<b style='color:#16a34a'>OK</b>";
       if(g.querySelector(".nok-on")) return "<b style='color:#dc2626'>NOT OK</b>";
       return "<span style='color:#aaa'>—</span>";
