@@ -71,7 +71,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
 .btn-pdf:hover { background: #0d2852; }
 .btn-rst { background: #fff; color: #555; border: 1px solid #bbb; padding: 10px 16px; border-radius: 4px; font-size: 13px; cursor: pointer; touch-action: manipulation; }
 /* Barcode Scanner Modal */
-.scanner-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:5000;flex-direction:column;align-items:center;justify-content:center;}
+.scanner-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;flex-direction:column;align-items:center;justify-content:center;}
 .scanner-overlay.active{display:flex;}
 .scanner-box{background:#000;border-radius:12px;overflow:hidden;width:90%;max-width:400px;}
 .scanner-header{background:#1a3a6b;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;}
@@ -1278,11 +1278,17 @@ let scannerStream   = null;
 let scannerRAF      = null;
 
 function openScanner(inputId, label){
+  console.log("openScanner called:", inputId, label);
   scannerTargetId = inputId;
-  document.getElementById("scannerLabel").textContent = label;
+  const labelEl = document.getElementById("scannerLabel");
+  const modal   = document.getElementById("scannerModal");
+  const status  = document.getElementById("scannerStatus");
+  if(!modal){ alert("Scanner not found!"); return; }
+  if(labelEl) labelEl.textContent = label;
   document.getElementById("manualBarcode").value = "";
-  document.getElementById("scannerStatus").textContent = "📷 Starting camera...";
-  document.getElementById("scannerModal").classList.add("active");
+  if(status) status.textContent = "📷 Starting camera...";
+  modal.classList.add("active");
+  modal.style.display = "flex";
   startScanner();
 }
 
@@ -1376,7 +1382,8 @@ function closeScanner(){
   if(scannerStream){ scannerStream.getTracks().forEach(t=>t.stop()); scannerStream=null; }
   const v=document.getElementById("scannerVideo");
   if(v) v.srcObject=null;
-  document.getElementById("scannerModal").classList.remove("active");
+  const m=document.getElementById("scannerModal");
+  if(m){ m.classList.remove("active"); m.style.display="none"; }
   scannerTargetId=null;
 }
 
