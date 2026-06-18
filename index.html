@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BTPL OBA v3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -352,21 +352,8 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
       <span style="font-size:14px;font-weight:700;">🔲 <span id="scannerLabel">Sample</span></span>
       <button onclick="closeScanner()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;">✕</button>
     </div>
-    <div style="position:relative;background:#000;">
-      <video id="scannerVideo" autoplay playsinline muted 
-        style="width:100%;height:260px;object-fit:cover;display:block;"></video>
-      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-        <div style="width:240px;height:120px;position:relative;">
-          <div style="position:absolute;inset:0;box-shadow:0 0 0 1000px rgba(0,0,0,0.55);border-radius:4px;"></div>
-          <div style="position:absolute;inset:0;border:2px solid #16a34a;border-radius:4px;"></div>
-          <div style="position:absolute;top:0;left:0;width:18px;height:18px;border-top:3px solid #fff;border-left:3px solid #fff;"></div>
-          <div style="position:absolute;top:0;right:0;width:18px;height:18px;border-top:3px solid #fff;border-right:3px solid #fff;"></div>
-          <div style="position:absolute;bottom:0;left:0;width:18px;height:18px;border-bottom:3px solid #fff;border-left:3px solid #fff;"></div>
-          <div style="position:absolute;bottom:0;right:0;width:18px;height:18px;border-bottom:3px solid #fff;border-right:3px solid #fff;"></div>
-          <div id="scanLine2" style="position:absolute;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,#16a34a,transparent);top:50%;animation:scanline 1.8s ease-in-out infinite;"></div>
-        </div>
-      </div>
-      <div id="tapFocusRing" style="position:absolute;width:50px;height:50px;border:2px solid #fff;border-radius:50%;display:none;pointer-events:none;transform:translate(-50%,-50%);transition:opacity 0.3s;"></div>
+    <div style="background:#000;">
+      <div id="qr-reader" style="width:100%;"></div>
     </div>
     <div id="scannerStatus" style="background:#111;color:#aaa;padding:8px 14px;font-size:12px;text-align:center;">
       📷 Tap screen to focus • Hold barcode in green box
@@ -1292,79 +1279,48 @@ function openScanner(inputId, label){
   startScanner();
 }
 
+let html5QrScanner = null;
+
 async function startScanner(){
-  const video = document.getElementById("scannerVideo");
   const status = document.getElementById("scannerStatus");
+  status.textContent = "📷 Starting camera...";
+
   try {
-    // Use environment camera with HD resolution
-    scannerStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode:"environment", width:{ideal:1280}, height:{ideal:720} }
-    });
-    video.srcObject = scannerStream;
-    await video.play();
-
-    const track = scannerStream.getVideoTracks()[0];
-
-    // Try continuous autofocus
-    try {
-      await track.applyConstraints({ advanced:[{ focusMode:"continuous" }] });
-    } catch(e){}
-
-    // Tap to focus
-    video.ontouchend = async (e) => {
-      const touch = e.changedTouches[0];
-      const ring  = document.getElementById("tapFocusRing");
-      ring.style.left    = touch.clientX+"px";
-      ring.style.top     = touch.clientY+"px";
-      ring.style.display = "block";
-      ring.style.opacity = "1";
-      setTimeout(()=>{ ring.style.opacity="0"; setTimeout(()=>ring.style.display="none",300); }, 700);
-      try {
-        const rect = video.getBoundingClientRect();
-        const x = (touch.clientX-rect.left)/rect.width;
-        const y = (touch.clientY-rect.top)/rect.height;
-        await track.applyConstraints({ advanced:[{focusMode:"single-shot",pointOfInterest:{x,y}}] });
-        setTimeout(async()=>{ try{await track.applyConstraints({advanced:[{focusMode:"continuous"}]});}catch(e){} },1500);
-      } catch(e){}
+    // Use Html5Qrcode library - best for mobile
+    html5QrScanner = new Html5Qrcode("qr-reader");
+    
+    const config = {
+      fps: 15,
+      qrbox: { width: 220, height: 120 },
+      aspectRatio: 1.7,
+      supportedScanTypes: [
+        Html5QrcodeScanType.SCAN_TYPE_CAMERA
+      ],
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.CODE_93,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.DATA_MATRIX,
+        Html5QrcodeSupportedFormats.ITF,
+      ]
     };
 
-    // Use BarcodeDetector (works on Redmi/OnePlus Chrome)
-    if("BarcodeDetector" in window){
-      const detector = new BarcodeDetector({
-        formats:["code_128","code_39","code_93","ean_13","ean_8","upc_a","upc_e","qr_code","data_matrix","itf","codabar","aztec"]
-      });
-      status.textContent = "✅ Ready! Hold barcode in box • Tap to focus";
-      const detect = async () => {
-        if(!scannerStream) return;
-        try {
-          const codes = await detector.detect(video);
-          if(codes.length > 0){ onBarcodeFound(codes[0].rawValue); return; }
-        } catch(e){}
-        scannerRAF = requestAnimationFrame(detect);
-      };
-      scannerRAF = requestAnimationFrame(detect);
-    } else {
-      // jsQR fallback
-      status.textContent = "📷 Hold barcode in green box • Tap to focus";
-      const canvas = document.createElement("canvas");
-      const ctx    = canvas.getContext("2d");
-      const detect = () => {
-        if(!scannerStream) return;
-        if(video.readyState === video.HAVE_ENOUGH_DATA){
-          canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-          ctx.drawImage(video,0,0);
-          const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-          if(typeof jsQR!=="undefined"){
-            const code = jsQR(img.data,img.width,img.height,{inversionAttempts:"dontInvert"});
-            if(code){ onBarcodeFound(code.data); return; }
-          }
-        }
-        scannerRAF = requestAnimationFrame(detect);
-      };
-      scannerRAF = requestAnimationFrame(detect);
-    }
+    await html5QrScanner.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText) => { onBarcodeFound(decodedText); },
+      (errorMsg) => { /* ignore scan errors */ }
+    );
+
+    status.textContent = "✅ Ready! Hold barcode inside box";
+
   } catch(err){
-    status.textContent = "❌ Camera error — type barcode below";
+    status.textContent = "❌ " + err + " — Type barcode below";
     document.getElementById("manualBarcode").focus();
   }
 }
@@ -1377,11 +1333,10 @@ function onBarcodeFound(val){
   setTimeout(closeScanner, 500);
 }
 
-function closeScanner(){
+async function closeScanner(){
+  try{ if(html5QrScanner && html5QrScanner.isScanning){ await html5QrScanner.stop(); html5QrScanner=null; } }catch(e){}
   if(scannerRAF){ cancelAnimationFrame(scannerRAF); scannerRAF=null; }
   if(scannerStream){ scannerStream.getTracks().forEach(t=>t.stop()); scannerStream=null; }
-  const v=document.getElementById("scannerVideo");
-  if(v) v.srcObject=null;
   const m=document.getElementById("scannerModal");
   if(m){ m.classList.remove("active"); m.style.display="none"; }
   scannerTargetId=null;
