@@ -1404,27 +1404,27 @@ function adminTab(tab){
 
 function renderUsersList(){
   const allUsers = getCombinedUsers();
-  const extra    = JSON.parse(localStorage.getItem("btpl_users")||"{}");
   let html = "";
-  Object.entries(allUsers).forEach(([uname, udata])=>{
+  Object.entries(allUsers).forEach(function(entry){
+    const uname = entry[0];
+    const udata = entry[1];
     const isBuiltIn = USERS[uname] ? true : false;
-    const roleBg  = udata.role==="admin" ? "#fef9c3" : "#dcfce7";
-    const roleClr = udata.role==="admin" ? "#92400e" : "#166534";
-    const delBtn  = !isBuiltIn ? '<button onclick="deleteUser(\'' + uname + '\')" style="background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>' : '';
-    const builtIn = isBuiltIn ? '<span style="color:#aaa;font-size:10px;margin-left:4px;">(built-in)</span>' : '';
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;font-size:12px;">'
-          + '<div>'
-          + '<b>' + (udata.display||uname) + '</b>'
-          + '<span style="color:#888;margin-left:6px;">@' + uname + '</span>'
-          + '<span style="background:' + roleBg + ';color:' + roleClr + ';padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;margin-left:6px;">' + udata.role + '</span>'
-          + builtIn
-          + '</div>'
-          + delBtn
-          + '</div>';
+    const roleBg  = udata.role === "admin" ? "#fef9c3" : "#dcfce7";
+    const roleClr = udata.role === "admin" ? "#92400e" : "#166534";
+    html += "<div style='display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;font-size:12px;'>";
+    html += "<div>";
+    html += "<b>" + (udata.display||uname) + "</b>";
+    html += "<span style='color:#888;margin-left:6px;'>@" + uname + "</span>";
+    html += "<span style='background:" + roleBg + ";color:" + roleClr + ";padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;margin-left:6px;'>" + udata.role + "</span>";
+    if(isBuiltIn) html += "<span style='color:#aaa;font-size:10px;margin-left:4px;'>(built-in)</span>";
+    html += "</div>";
+    if(!isBuiltIn){
+      html += "<button onclick="deleteUser('" + uname + "')" style='background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;'>Delete</button>";
+    }
+    html += "</div>";
   });
   document.getElementById("usersList").innerHTML = html;
 }
-
 function addNewUser(){
   const name     = document.getElementById("newUserName").value.trim();
   const username = document.getElementById("newUserUsername").value.trim().toLowerCase();
@@ -1454,25 +1454,28 @@ function deleteUser(username){
 
 function renderCustomersList(){
   const allCust = getCombinedCustomerData();
-  const extra   = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
   let html = "";
-  Object.entries(allCust).forEach(([cname, cdata])=>{
-    const isBuiltIn = CUSTOMER_DATA[cname]?true:false;
-    const delBtn = !isBuiltIn ? '<button onclick="deleteCustomer(\'' + cname + '\')" style="background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>' : '';
-    const partNames = cdata.parts.slice(0,3).map(function(p){return p.split(' — ')[0];}).join(', ') + (cdata.parts.length>3?'...':'');
-    html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden;">'
-          + '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0;">'
-          + '<b style="font-size:13px;">' + cname + '</b>'
-          + '<div style="display:flex;gap:6px;">' + delBtn + '</div>'
-          + '</div>'
-          + '<div style="padding:8px 10px;font-size:11px;color:#555;">'
-          + '<b>Parts (' + cdata.parts.length + '):</b> ' + partNames
-          + ' <button onclick="manageParts(\'' + cname + '\')" style="background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:8px;">+ Add Part</button>'
-          + '</div></div>';
+  Object.entries(allCust).forEach(function(entry){
+    const cname = entry[0];
+    const cdata = entry[1];
+    const isBuiltIn = CUSTOMER_DATA[cname] ? true : false;
+    const partCount = cdata.parts.length;
+    const partPreview = cdata.parts.slice(0,3).map(function(p){ return p.split(" — ")[0]; }).join(", ") + (partCount>3?"...":"");
+    html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden;'>";
+    html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0;'>";
+    html += "<b style='font-size:13px;'>" + cname + "</b>";
+    html += "<div style='display:flex;gap:6px;'>";
+    if(!isBuiltIn){
+      html += "<button onclick="deleteCustomer('" + cname + "')" style='background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;'>Delete</button>";
+    }
+    html += "</div></div>";
+    html += "<div style='padding:8px 10px;font-size:11px;color:#555;'>";
+    html += "<b>Parts (" + partCount + "):</b> " + partPreview;
+    html += " <button onclick="manageParts('" + cname + "')" style='background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:8px;'>+ Add Part</button>";
+    html += "</div></div>";
   });
   document.getElementById("customersList").innerHTML = html;
 }
-
 function addNewCustomer(){
   const name = document.getElementById("newCustName").value.trim();
   if(!name){ showToast("⚠ Enter customer name!",true); return; }
