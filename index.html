@@ -1419,7 +1419,7 @@ function renderUsersList(){
     html += " <span style='background:" + roleBg + ";color:" + roleClr + ";padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;'>" + udata.role + "</span>";
     if(builtIn) html += " <span style='color:#aaa;font-size:10px;'>(built-in)</span>";
     html += "</div>";
-    if(!builtIn) html += "<button onclick='deleteUser("" + uname + "")' style='background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;'>Delete</button>";
+    if(!builtIn){ var dBtn = document.createElement("button"); dBtn.textContent="Delete"; dBtn.style.cssText="background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;"; dBtn.setAttribute("data-user", uname); dBtn.onclick=function(){ deleteUser(this.getAttribute("data-user")); }; html += dBtn.outerHTML; }
     html += "</div>";
   }
   document.getElementById("usersList").innerHTML = html;
@@ -1465,11 +1465,11 @@ function renderCustomersList(){
     html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0;'>";
     html += "<b>" + cname + "</b>";
     html += "<div style='display:flex;gap:6px;'>";
-    if(!builtIn) html += "<button onclick='deleteCustomer("" + cname + "")' style='background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;'>Delete</button>";
+    if(!builtIn){ var dcBtn = document.createElement("button"); dcBtn.textContent="Delete"; dcBtn.style.cssText="background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;"; dcBtn.setAttribute("data-cust",cname); dcBtn.onclick=function(){ deleteCustomer(this.getAttribute("data-cust")); }; html += dcBtn.outerHTML; }
     html += "</div></div>";
     html += "<div style='padding:8px 10px;font-size:11px;color:#555;'>";
     html += "<b>Parts (" + partCount + "):</b> " + partPreview;
-    html += " <button onclick='manageParts("" + cname + "")' style='background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:8px;'>+ Add Part</button>";
+    var mpBtn = document.createElement("button"); mpBtn.textContent="+ Add Part"; mpBtn.style.cssText="background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:8px;"; mpBtn.setAttribute("data-cust",cname); mpBtn.onclick=function(){ manageParts(this.getAttribute("data-cust")); }; html += mpBtn.outerHTML;
     html += "</div></div>";
   }
   document.getElementById("customersList").innerHTML = html;
