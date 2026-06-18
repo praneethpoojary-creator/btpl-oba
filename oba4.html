@@ -452,6 +452,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
         <input type="text" id="newPartInput" placeholder="Add part: PART-001 - Description" style="flex:1;border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:12px;outline:none;">
         <button onclick="addPartFromModal()" style="background:#16a34a;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">+ Add</button>
       </div>
+      <button onclick="closeEditCust()" style="width:100%;margin-top:12px;background:#1a3a6b;color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">&#10004; Save &amp; Close</button>
     </div>
   </div>
 </div>
@@ -1670,7 +1671,32 @@ function openEditCust(cname){
 function closeEditCust(){
   document.getElementById("editCustModal").style.display = "none";
   renderCustomersList();
-  refreshCustomerDropdown();
+  // Fully rebuild customer dropdown with updated parts
+  rebuildCustomerDropdown();
+}
+
+function rebuildCustomerDropdown(){
+  var sel     = document.getElementById("customerSelect");
+  var current = sel.value;
+  // Remove all options except first (-- Select --) and last (Other)
+  while(sel.options.length > 1){
+    sel.remove(1);
+  }
+  // Re-add all customers
+  var allCust = getCombinedCustomerData();
+  Object.keys(allCust).forEach(function(name){
+    var o = document.createElement("option");
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+  // Add Other option
+  var other = document.createElement("option");
+  other.value = "__other__"; other.textContent = "Other (type below)";
+  sel.appendChild(other);
+  // Restore selection
+  sel.value = current;
+  // If customer was selected, re-trigger to refresh parts dropdown
+  if(current && current !== "__other__") onCustomerChange();
 }
 function saveEditCustName(){
   var oldName = document.getElementById("editCustKey").value;
