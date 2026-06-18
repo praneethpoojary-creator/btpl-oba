@@ -345,6 +345,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
   <button class="btn-submit" onclick="doSubmit()" id="submitBtn">&#9729; Submit to Drive</button>
 </div>
 <div class="toast" id="toast"></div>
+</div><!-- end mainApp -->
 
 <!-- ADMIN PANEL -->
 <div id="adminPanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:8000;overflow-y:auto;">
@@ -608,6 +609,27 @@ document.addEventListener("keydown", function(e){
   if(e.key === "Enter" && document.getElementById("loginScreen").style.display !== "none"){
     doLogin();
   }
+});
+
+// Auto login on page load
+window.addEventListener("load", function(){
+  try {
+    const raw = localStorage.getItem("btpl_session");
+    if(raw){
+      const session = JSON.parse(raw);
+      if(session && session.user && (Date.now()-session.time < 8*60*60*1000)){
+        const allUsers = getCombinedUsers();
+        if(allUsers[session.user]){
+          CURRENT_USER = session.user;
+          CURRENT_ROLE = session.role;
+          showApp(CURRENT_USER, CURRENT_ROLE);
+          return;
+        }
+      }
+      localStorage.removeItem("btpl_session");
+    }
+  } catch(e){ localStorage.removeItem("btpl_session"); }
+  document.getElementById("loginScreen").style.display = "flex";
 });
 
 
