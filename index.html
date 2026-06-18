@@ -1330,7 +1330,7 @@ function closePreview(){
   pendingPDF=null;
 }
 
-async async function doSubmit(){
+async function doSubmit(){
   // ── Validate all required fields ─────────────────────────
   if(!gv("customer"))  { showToast("⚠ Required: Customer",true);      return; }
   if(!gv("partNo"))    { showToast("⚠ Required: Part Number",true);   return; }
@@ -1373,7 +1373,7 @@ async async function doSubmit(){
   if(!confirm("Submit OBA checklist to Google Drive?")) return;
   const result = buildPDFDoc();
   window._pendingPDF = result;
-  await uploadToDrive(result);
+  uploadToDrive(result);
 }
 
 async function submitFromPreview(){
