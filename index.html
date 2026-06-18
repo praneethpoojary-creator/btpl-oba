@@ -898,14 +898,15 @@ function onCustomerChange(){
   inp.value = chosen;
   inp.style.display="none"; sel.style.display="block";
 
-  if(chosen && CUSTOMER_DATA[chosen]){
-    const data = CUSTOMER_DATA[chosen];
+  var allCustData = getCombinedCustomerData();
+  if(chosen && allCustData[chosen]){
+    const data = allCustData[chosen];
     // Show part number dropdown - only show part number code (before  - )
     pSel.innerHTML = '<option value="">-- Select Part Number --</option>';
     data.parts.forEach(p => {
       const o=document.createElement("option");
-      o.value=p; // keep full value with description for auto-fill
-      o.textContent=p.split("  -  ")[0]; // show only part number code
+      o.value=p;
+      o.textContent=p.split(" - ")[0].split(" — ")[0].trim();
       pSel.appendChild(o);
     });
     pSel.style.display="block";
