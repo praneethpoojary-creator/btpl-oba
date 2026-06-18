@@ -1403,7 +1403,7 @@ function adminTab(tab){
 }
 
 function renderUsersList(){
-  var allUsers = getCombinedUsers();
+  var allUsers  = getCombinedUsers();
   var container = document.getElementById("usersList");
   container.innerHTML = "";
   Object.keys(allUsers).forEach(function(uname){
@@ -1412,17 +1412,50 @@ function renderUsersList(){
     var div = document.createElement("div");
     div.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;font-size:12px;";
     var info = document.createElement("div");
-    info.innerHTML = "<b>" + (udata.display||uname) + "</b> <span style='color:#888;'>@" + uname + "</span> <span style='background:" + (udata.role==="admin"?"#fef9c3":"#dcfce7") + ";color:" + (udata.role==="admin"?"#92400e":"#166534") + ";padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;'>" + udata.role + "</span>" + (builtIn?" <span style='color:#aaa;font-size:10px;'>(built-in)</span>":"");
+    info.innerHTML = "<b>" + (udata.display||uname) + "</b>"
+      + " <span style='color:#888;'>@" + uname + "</span>"
+      + " <span style='background:" + (udata.role==="admin"?"#fef9c3":"#dcfce7") + ";color:" + (udata.role==="admin"?"#92400e":"#166534") + ";padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;'>" + udata.role + "</span>"
+      + (builtIn?" <span style='color:#aaa;font-size:10px;'>(built-in)</span>":"");
     div.appendChild(info);
+    var btnDiv = document.createElement("div");
+    btnDiv.style.cssText = "display:flex;gap:4px;";
+    // Edit button (all users)
+    var editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.style.cssText = "background:#dbeafe;border:none;color:#1e40af;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
+    (function(u,d){ editBtn.onclick = function(){ editUser(u,d); }; })(uname, udata);
+    btnDiv.appendChild(editBtn);
+    // Delete button (non built-in only)
     if(!builtIn){
-      var btn = document.createElement("button");
-      btn.textContent = "Delete";
-      btn.style.cssText = "background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
-      (function(u){ btn.onclick = function(){ deleteUser(u); }; })(uname);
-      div.appendChild(btn);
+      var delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.style.cssText = "background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
+      (function(u){ delBtn.onclick = function(){ deleteUser(u); }; })(uname);
+      btnDiv.appendChild(delBtn);
     }
+    div.appendChild(btnDiv);
     container.appendChild(div);
   });
+}
+
+function editUser(uname, udata){
+  var newDisplay  = prompt("Display Name:", udata.display||uname);
+  if(newDisplay === null) return;
+  var newPassword = prompt("New Password (leave blank to keep same):", "");
+  if(newPassword === null) return;
+  var newRole = prompt("Role (admin/user):", udata.role);
+  if(newRole === null) return;
+  if(newRole !== "admin" && newRole !== "user"){ alert("Role must be 'admin' or 'user'"); return; }
+  
+  var extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
+  // If built-in user, add to extra to override
+  if(!extra[uname]) extra[uname] = {};
+  extra[uname].display  = newDisplay || uname;
+  extra[uname].role     = newRole;
+  extra[uname].password = newPassword || udata.password;
+  localStorage.setItem("btpl_users", JSON.stringify(extra));
+  showToast("User updated!", false);
+  renderUsersList();
 }
 function addNewUser(){
   var name     = document.getElementById("newUserName").value.trim();
