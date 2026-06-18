@@ -1716,34 +1716,37 @@ function getEditableParts(cname){
 }
 function editPart(cname, idx, oldPart){
   var newPart = prompt("Edit part:", oldPart);
-  if(!newPart || newPart === oldPart) return;
+  if(newPart === null) return;
+  if(!newPart.trim()){ alert("Part number cannot be empty!"); return; }
+  // Ensure cname exists in localStorage with ALL parts
+  getEditableParts(cname);
   var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
-  if(!extra[cname]){ getEditableParts(cname); extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}"); }
-  extra[cname].parts[idx] = newPart;
+  extra[cname].parts[idx] = newPart.trim();
   localStorage.setItem("btpl_customers", JSON.stringify(extra));
   showToast("Part updated!", false);
-  renderEditPartsList(cname, extra[cname].parts);
+  // Refresh the parts list
+  openEditCust(cname);
 }
 function deletePart(cname, idx){
   if(!confirm("Delete this part?")) return;
+  getEditableParts(cname);
   var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
-  if(!extra[cname]){ getEditableParts(cname); extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}"); }
   extra[cname].parts.splice(idx,1);
   localStorage.setItem("btpl_customers", JSON.stringify(extra));
   showToast("Part deleted!", false);
-  renderEditPartsList(cname, extra[cname].parts);
+  openEditCust(cname);
 }
 function addPartFromModal(){
   var cname   = document.getElementById("editCustKey").value;
   var newPart = document.getElementById("newPartInput").value.trim();
   if(!newPart){ showToast("Enter part number!",true); return; }
+  getEditableParts(cname);
   var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
-  if(!extra[cname]){ getEditableParts(cname); extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}"); }
   extra[cname].parts.unshift(newPart);
   localStorage.setItem("btpl_customers", JSON.stringify(extra));
   document.getElementById("newPartInput").value = "";
   showToast("Part added!", false);
-  renderEditPartsList(cname, extra[cname].parts);
+  openEditCust(cname);
 }
 function editCustomerName(cname){ openEditCust(cname); }
 function viewParts(cname){ openEditCust(cname); }
