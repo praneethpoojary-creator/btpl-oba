@@ -209,8 +209,8 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
       <input type="password" id="loginPass" placeholder="Enter password" name="password" autocomplete="current-password"
         style="width:100%;border:1.5px solid #ddd;border-radius:8px;padding:10px 12px;font-size:14px;outline:none;">
     </div>
-    <div id="loginError" style="color:#dc2626;font-size:12px;margin-bottom:10px;display:none;text-align:center;">
-      ❌ Invalid username or password
+    <div id="loginError" style="color:#dc2626;font-size:12px;margin-bottom:10px;display:none;text-align:center;background:#fef2f2;padding:8px;border-radius:6px;border:1px solid #fca5a5;">
+      ❌ Invalid username or password. Please try again.
     </div>
     <button onclick="doLogin()"
       style="width:100%;background:#1a3a6b;color:#fff;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;">
@@ -345,6 +345,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
   <button class="btn-submit" onclick="doSubmit()" id="submitBtn">&#9729; Submit to Drive</button>
 </div>
 <div class="toast" id="toast"></div>
+</div><!-- end mainApp -->
 
 <!-- ADMIN PANEL -->
 <div id="adminPanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:8000;overflow-y:auto;">
@@ -568,29 +569,39 @@ function autoLogin(){
 }
 
 function showApp(username, role){
-  const allUsers = getCombinedUsers();
-  // Save session
-  try{ localStorage.setItem("btpl_session", JSON.stringify({user:username, role:role, time:Date.now()})); }catch(e){}
-  document.getElementById("loginScreen").style.display = "none";
-  document.getElementById("mainApp").style.display = "block";
-  const userBar = document.getElementById("userBar");
-  userBar.style.display = "flex";
-  document.getElementById("userBarName").innerHTML =
-    "👤 " + (allUsers[username]?.display || username) +
-    " &nbsp;|&nbsp; Role: <b>" + (role==="admin"?"Admin":"User") + "</b>";
-  const driveBtn = document.getElementById("driveFolderBtn");
-  if(role === "admin"){
-    driveBtn.textContent = "📂 Drive (Edit)";
-    driveBtn.style.color = "#86efac";
-    // Show admin panel button
+  try {
+    const allUsers = getCombinedUsers();
+    // Save session
+    try{ localStorage.setItem("btpl_session", JSON.stringify({user:username, role:role, time:Date.now()})); }catch(e){}
+    
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("mainApp").style.display = "block";
+    document.getElementById("userBar").style.display = "flex";
+    
+    document.getElementById("userBarName").innerHTML =
+      "👤 " + (allUsers[username] ? allUsers[username].display||username : username) +
+      " &nbsp;|&nbsp; Role: <b>" + (role==="admin"?"Admin":"User") + "</b>";
+    
+    const driveBtn = document.getElementById("driveFolderBtn");
+    if(driveBtn){
+      if(role === "admin"){
+        driveBtn.textContent = "📂 Drive (Edit)";
+        driveBtn.style.color = "#86efac";
+      } else {
+        driveBtn.textContent = "📂 Drive (View)";
+      }
+    }
+    
     const ab = document.getElementById("adminPanelBtn");
-    if(ab) ab.style.display="inline-block";
-  } else {
-    driveBtn.textContent = "📂 Drive (View)";
+    if(ab) ab.style.display = role==="admin" ? "inline-block" : "none";
+    
+    document.getElementById("date").value = new Date().toISOString().slice(0,10);
+    loadDriveLog();
+    buildTable(5);
+  } catch(err){
+    console.error("showApp error:", err);
+    alert("Login error: " + err.message);
   }
-  document.getElementById("date").value = new Date().toISOString().slice(0,10);
-  loadDriveLog();
-  buildTable(5);
 }
 
 // Allow Enter key to login
@@ -598,6 +609,27 @@ document.addEventListener("keydown", function(e){
   if(e.key === "Enter" && document.getElementById("loginScreen").style.display !== "none"){
     doLogin();
   }
+});
+
+// Auto login on page load
+window.addEventListener("load", function(){
+  try {
+    const raw = localStorage.getItem("btpl_session");
+    if(raw){
+      const session = JSON.parse(raw);
+      if(session && session.user && (Date.now()-session.time < 8*60*60*1000)){
+        const allUsers = getCombinedUsers();
+        if(allUsers[session.user]){
+          CURRENT_USER = session.user;
+          CURRENT_ROLE = session.role;
+          showApp(CURRENT_USER, CURRENT_ROLE);
+          return;
+        }
+      }
+      localStorage.removeItem("btpl_session");
+    }
+  } catch(e){ localStorage.removeItem("btpl_session"); }
+  document.getElementById("loginScreen").style.display = "flex";
 });
 
 
