@@ -1424,6 +1424,109 @@ function getToken(){
 }
 
 async function uploadToDrive({doc, filename}){
+  setStatus("⏳ Uploading PDF to Drive...", "info");
+  setBtns(true, "⏳ Uploading...");
+  try {
+    // Convert PDF to base64
+    const pdfBlob   = doc.output("blob");
+    const reader    = new FileReader();
+    const base64PDF = await new Promise((res, rej) => {
+      reader.onload  = () => res(reader.result.split(",")[1]);
+      reader.onerror = rej;
+      reader.readAsDataURL(pdfBlob);
+    });
+
+    // Send to Apps Script (uses fixed Google account - same Drive always)
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYRtzD0hxyKOqYWWxHe9KPgpQPL4UdfiSV4wSlZEpdYG4mgOTDRfWxaviMQJouZKAZpA/exec";
+
+    // Build log data
+    const logData = {
+      filename: filename,
+      pdfBase64: base64PDF,
+      customer:   gv("customer"),
+      modelName:  gv("modelName"),
+      partNo:     gv("partNo"),
+      quantity:   gv("quantity"),
+      invoiceNo:  gv("invoiceNo"),
+      lotSize:    (document.getElementById("lotVal")||{}).value||"",
+      status:     STATUS === "acc" ? "Accepted" : "Rejected",
+      obaBy:      gv("obaBy"),
+      date:       gv("date"),
+      submittedBy: CURRENT_USER || ""
+    };
+
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(logData)
+    });
+
+    const result = await resp.json();
+    if(result.status === "success"){
+      setStatus("✅ Uploaded to Drive successfully!", "ok");
+      setBtns(false, "☁ Submit to Drive");
+      saveDriveLog(filename, result.fileUrl || FOLDER_URL);
+      loadDriveLog();
+      showToast("✅ Submitted successfully!", false);
+    } else {
+      throw new Error(result.message || "Upload failed");
+    }
+  } catch(err){
+    console.error("Upload error:", err);
+    setStatus("❌ Upload failed: " + err.message, "err");
+    setBtns(false, "☁ Submit to Drive");
+    showToast("❌ Upload failed — check internet connection", true);
+  }
+}
+
+
+async function submitFromPreview(){
+  if(!pendingPDF) return;
+  await uploadToDrive(pendingPDF);
+}
+
+// ── Google Drive Upload via Apps Script ───────────────────────
+const CLIENT_ID  = "818103137759-42ia4ce8o1o8r1gjuv1buu9n7njf02mm.apps.googleusercontent.com";
+const FOLDER_ID  = "1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd";
+const FOLDER_URL = "https://drive.google.com/drive/folders/1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd";
+const SHEET_ID   = "1Bd1Zc2cspN_QZq2EEPlrWhLFSH1qPGyFa-dLdLmEXxE";
+const SCOPES     = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets";
+let   gToken     = null;
+
+function setStatus(msg, type, html){
+  const d = document.getElementById("uploadStatus");
+  if(!d) return;
+  d.style.display = "block";
+  const bg = {info:"#eff6ff", ok:"#f0fdf4", err:"#fef2f2"};
+  const cl = {info:"#1e40af", ok:"#166534", err:"#dc2626"};
+  d.style.background = bg[type]||bg.info;
+  d.style.color = cl[type]||cl.info;
+  if(html) d.innerHTML = msg; else d.textContent = msg;
+}
+function setBtns(disabled, label){
+  ["submitBtn","modalSubmitBtn"].forEach(id=>{
+    const b = document.getElementById(id);
+    if(b){ b.disabled = disabled; b.textContent = label; }
+  });
+}
+
+function getToken(){
+  return new Promise((resolve, reject)=>{
+    if(gToken){ resolve(gToken); return; }
+    if(typeof google === "undefined"){ reject(new Error("Google Sign-In not loaded")); return; }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback:(resp)=>{
+        if(resp.error){ reject(new Error(resp.error)); return; }
+        gToken = resp.access_token;
+        resolve(gToken);
+      }
+    });
+    client.requestAccessToken();
+  });
+}
+
+async function uploadToDrive({doc, filename}){
   setStatus("⏳ Connecting to Google...", "info");
   setBtns(true, "⏳ Uploading...");
   try {
