@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BTPL OBA v3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -345,44 +345,42 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
 </div>
 <div class="toast" id="toast"></div>
 
-<!-- Barcode Options Modal -->
+<!-- Barcode Scanner Modal -->
 <div class="scanner-overlay" id="scannerModal">
-  <div class="scanner-box" style="background:#fff;border-radius:12px;overflow:hidden;width:90%;max-width:360px;">
-    <div class="scanner-header">
-      <span>🔲 Barcode — <span id="scannerLabel">Sample</span></span>
-      <button onclick="closeScanner()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;">✕</button>
+  <div style="background:#000;border-radius:12px;overflow:hidden;width:95%;max-width:420px;">
+    
+    <!-- Header -->
+    <div style="background:#1a3a6b;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:13px;font-weight:700;">🔲 Scan Barcode — <span id="scannerLabel">Sample</span></span>
+      <button onclick="closeScanner()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;">✕ Close</button>
     </div>
 
-    <!-- Option 1: Scan via camera capture -->
-    <div style="padding:14px;border-bottom:1px solid #eee;">
-      <div style="font-size:12px;font-weight:700;color:#1a3a6b;margin-bottom:8px;">📷 Option 1: Scan Barcode</div>
-      <div style="font-size:11px;color:#555;margin-bottom:8px;">Opens camera — point at barcode to capture</div>
-      <label style="display:block;background:#1a3a6b;color:#fff;text-align:center;padding:10px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;">
-        📷 Open Camera to Scan
-        <input type="file" accept="image/*" capture="environment" id="barcodeCapture"
-          style="display:none;" onchange="processBarcodeImage(this)">
-      </label>
+    <!-- Live Camera View -->
+    <div style="position:relative;background:#000;min-height:220px;">
+      <video id="scannerVideo" autoplay playsinline muted style="width:100%;max-height:280px;display:block;object-fit:cover;"></video>
+      <!-- Scan guide box -->
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:120px;border:3px solid #16a34a;border-radius:8px;box-shadow:0 0 0 2000px rgba(0,0,0,0.4);pointer-events:none;"></div>
+      <!-- Scan line animation -->
+      <div style="position:absolute;left:calc(50% - 97px);width:194px;height:2px;background:#16a34a;box-shadow:0 0 6px #16a34a;animation:scanline 1.5s ease-in-out infinite;pointer-events:none;" id="scanLine"></div>
     </div>
 
-    <!-- Option 2: Manual entry -->
-    <div style="padding:14px;">
-      <div style="font-size:12px;font-weight:700;color:#1a3a6b;margin-bottom:8px;">⌨ Option 2: Type Manually</div>
+    <!-- Status -->
+    <div id="scannerStatus" style="background:#111;color:#aaa;padding:6px 14px;font-size:11px;text-align:center;">
+      📷 Point camera at barcode inside the green box...
+    </div>
+
+    <!-- Manual Entry -->
+    <div style="background:#1a1a1a;padding:12px 14px;">
+      <div style="font-size:11px;color:#888;margin-bottom:6px;">Or type manually:</div>
       <div style="display:flex;gap:8px;">
-        <input type="text" id="manualBarcode" placeholder="Type barcode number..."
-          style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:8px 10px;font-size:13px;outline:none;font-family:monospace;"
+        <input type="text" id="manualBarcode" placeholder="Type barcode here..."
+          style="flex:1;background:#333;border:1px solid #555;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;outline:none;font-family:monospace;"
           autocomplete="off" spellcheck="false">
         <button onclick="saveManualBarcode()"
-          style="background:#16a34a;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
-          ✔
-        </button>
-      </div>
-      <div style="text-align:center;margin-top:8px;">
-        <button onclick="closeScanner()"
-          style="background:#f1f5f9;color:#555;border:none;padding:6px 20px;border-radius:6px;font-size:12px;cursor:pointer;">
-          Cancel
-        </button>
+          style="background:#16a34a;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">✔</button>
       </div>
     </div>
+
   </div>
 </div>
 </div><!-- end mainApp -->
@@ -1277,21 +1275,59 @@ function addDriveLog(filename){
 }
 
 
-// ── BARCODE SCANNER ──────────────────────────────────────────
+// ── BARCODE SCANNER (ZXing) ──────────────────────────────────
 let scannerTargetId = null;
+let zxingReader = null;
 
 function openScanner(inputId, label){
   scannerTargetId = inputId;
   document.getElementById("scannerLabel").textContent = label;
   document.getElementById("manualBarcode").value = "";
+  document.getElementById("scannerStatus").textContent = "📷 Starting camera...";
   document.getElementById("scannerModal").classList.add("active");
-  // Reset file input
-  const cap = document.getElementById("barcodeCapture");
-  if(cap) cap.value = "";
+  startZXing();
+}
+
+function startZXing(){
+  try {
+    if(typeof ZXing === "undefined"){
+      document.getElementById("scannerStatus").textContent = "⚠ Scanner loading... use manual entry below.";
+      return;
+    }
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.QR_CODE,
+      ZXing.BarcodeFormat.CODE_128,
+      ZXing.BarcodeFormat.CODE_39,
+      ZXing.BarcodeFormat.EAN_13,
+      ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.DATA_MATRIX,
+      ZXing.BarcodeFormat.ITF,
+      ZXing.BarcodeFormat.UPC_A,
+      ZXing.BarcodeFormat.UPC_E
+    ]);
+    zxingReader = new ZXing.BrowserMultiFormatReader(hints);
+    zxingReader.decodeFromVideoDevice(null, "scannerVideo", (result, err) => {
+      if(result){
+        const val = result.getText();
+        document.getElementById(scannerTargetId).value = val;
+        document.getElementById(scannerTargetId).classList.add("ok");
+        document.getElementById("scannerStatus").textContent = "✅ Scanned: " + val;
+        showToast("✅ Barcode: " + val, false);
+        setTimeout(closeScanner, 600);
+      }
+    });
+    document.getElementById("scannerStatus").textContent = "📷 Point camera at barcode in the green box...";
+  } catch(e){
+    document.getElementById("scannerStatus").textContent = "❌ Camera error — use manual entry below.";
+  }
 }
 
 function closeScanner(){
+  try{ if(zxingReader){ zxingReader.reset(); zxingReader=null; } }catch(e){}
   document.getElementById("scannerModal").classList.remove("active");
+  const v = document.getElementById("scannerVideo");
+  if(v && v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; }
   scannerTargetId = null;
 }
 
@@ -1304,43 +1340,10 @@ function saveManualBarcode(){
   }
 }
 
-function processBarcodeImage(input){
-  if(!input.files || !input.files[0]) return;
-  const file = input.files[0];
-  const img = new Image();
-  const url = URL.createObjectURL(file);
-  img.onload = function(){
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    // Try jsQR
-    if(typeof jsQR !== "undefined"){
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-      if(code && code.data){
-        document.getElementById(scannerTargetId).value = code.data;
-        document.getElementById(scannerTargetId).classList.add("ok");
-        URL.revokeObjectURL(url);
-        closeScanner();
-        showToast("✅ Barcode scanned: " + code.data, false);
-        return;
-      }
-    }
-    // If jsQR fails — show manual entry hint
-    URL.revokeObjectURL(url);
-    document.getElementById("manualBarcode").focus();
-    document.getElementById("manualBarcode").placeholder = "Scan failed — type manually";
-  };
-  img.src = url;
-}
-
-// Enter key in manual input
 document.addEventListener("keydown", function(e){
-  if(e.key === "Enter"){
-    const mi = document.getElementById("manualBarcode");
-    if(mi && document.activeElement === mi) saveManualBarcode();
+  if(e.key==="Enter"){
+    const mi=document.getElementById("manualBarcode");
+    if(mi && document.activeElement===mi) saveManualBarcode();
   }
 });
 
