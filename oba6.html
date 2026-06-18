@@ -1002,7 +1002,7 @@ function buildTable(n) {
           <button class="okbtn" onclick="setOK(this,'nok')">NOT OK</button>
         </div></td>`;
     }
-    rows+=`<td class="white"><textarea class="rem-inp" rows="2" placeholder=""></textarea></td></tr>`;
+    rows+=`<td class="white"><textarea class="rem-inp" rows="2" placeholder="NA" style="color:#aaa;background:#f9f9f9;" readonly>NA</textarea></td></tr>`;
   });
   body.innerHTML = rows;
 }
@@ -1010,6 +1010,20 @@ function buildTable(n) {
 function setOK(btn,t){
   btn.closest(".okgrp").querySelectorAll(".okbtn").forEach(b=>b.classList.remove("ok-on","nok-on"));
   btn.classList.add(t==="ok"?"ok-on":"nok-on");
+  var row = btn.closest("tr");
+  var rem = row ? row.querySelector(".rem-inp") : null;
+  if(rem){
+    var hasNotOk = row.querySelector(".nok-on") !== null;
+    if(hasNotOk){
+      rem.readOnly=false; rem.style.background="#fffbeb"; rem.style.color="#333";
+      rem.style.border="1px solid #f59e0b";
+      if(rem.value==="NA") rem.value="";
+      rem.placeholder="Enter remarks...";
+    } else {
+      rem.readOnly=true; rem.style.background="#f9f9f9"; rem.style.color="#aaa";
+      rem.style.border=""; rem.value="NA";
+    }
+  }
 }
 
 function doReset(){
