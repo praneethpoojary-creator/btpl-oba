@@ -1646,6 +1646,100 @@ function refreshCustomerDropdown(){
   }
 }
 
+function openEditCust(cname){
+  var allCust = getCombinedCustomerData();
+  var cdata   = allCust[cname] || { parts:[] };
+  document.getElementById("editCustKey").value = cname;
+  document.getElementById("editCustTitle").textContent = cname;
+  document.getElementById("editCustName").value = cname;
+  document.getElementById("newPartInput").value = "";
+  document.getElementById("editCustModal").style.display = "flex";
+  renderEditPartsList(cname, cdata.parts);
+}
+function closeEditCust(){
+  document.getElementById("editCustModal").style.display = "none";
+  renderCustomersList();
+  refreshCustomerDropdown();
+}
+function saveEditCustName(){
+  var oldName = document.getElementById("editCustKey").value;
+  var newName = document.getElementById("editCustName").value.trim();
+  if(!newName){ showToast("Enter customer name!",true); return; }
+  if(newName === oldName){ showToast("Name unchanged",false); return; }
+  var extra   = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  var allCust = getCombinedCustomerData();
+  var data    = allCust[oldName] || { models:["Other"], parts:[] };
+  extra[newName] = { models: data.models.slice(), parts: data.parts.slice() };
+  if(extra[oldName]) delete extra[oldName];
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  document.getElementById("editCustKey").value = newName;
+  document.getElementById("editCustTitle").textContent = newName;
+  showToast("Customer renamed!", false);
+}
+function renderEditPartsList(cname, parts){
+  var container = document.getElementById("editPartsList");
+  container.innerHTML = "";
+  if(!parts || parts.length === 0){
+    container.innerHTML = "<div style='padding:10px;color:#aaa;font-size:12px;text-align:center;'>No parts added yet</div>";
+    return;
+  }
+  parts.forEach(function(part, idx){
+    var row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;padding:6px 10px;border-bottom:1px solid #f0f0f0;font-size:12px;gap:6px;";
+    var nameEl = document.createElement("span");
+    nameEl.textContent = part;
+    nameEl.style.cssText = "flex:1;";
+    row.appendChild(nameEl);
+    var editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.style.cssText = "background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer;";
+    (function(i,p){ editBtn.onclick = function(){ editPart(cname,i,p); }; })(idx,part);
+    row.appendChild(editBtn);
+    var delBtn = document.createElement("button");
+    delBtn.textContent = "Del";
+    delBtn.style.cssText = "background:#fee2e2;border:none;color:#dc2626;padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer;";
+    (function(i){ delBtn.onclick = function(){ deletePart(cname,i); }; })(idx);
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}
+function editPart(cname, idx, oldPart){
+  var newPart = prompt("Edit part:", oldPart);
+  if(!newPart || newPart === oldPart) return;
+  var extra   = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  var allCust = getCombinedCustomerData();
+  if(!extra[cname]) extra[cname] = { models: allCust[cname].models.slice(), parts: allCust[cname].parts.slice() };
+  extra[cname].parts[idx] = newPart;
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  showToast("Part updated!", false);
+  renderEditPartsList(cname, extra[cname].parts);
+}
+function deletePart(cname, idx){
+  if(!confirm("Delete this part?")) return;
+  var extra   = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  var allCust = getCombinedCustomerData();
+  if(!extra[cname]) extra[cname] = { models: allCust[cname].models.slice(), parts: allCust[cname].parts.slice() };
+  extra[cname].parts.splice(idx,1);
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  showToast("Part deleted!", false);
+  renderEditPartsList(cname, extra[cname].parts);
+}
+function addPartFromModal(){
+  var cname   = document.getElementById("editCustKey").value;
+  var newPart = document.getElementById("newPartInput").value.trim();
+  if(!newPart){ showToast("Enter part number!",true); return; }
+  var extra   = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  var allCust = getCombinedCustomerData();
+  if(!extra[cname]) extra[cname] = { models: allCust[cname].models.slice(), parts: allCust[cname].parts.slice() };
+  extra[cname].parts.unshift(newPart);
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  document.getElementById("newPartInput").value = "";
+  showToast("Part added!", false);
+  renderEditPartsList(cname, extra[cname].parts);
+}
+function editCustomerName(cname){ openEditCust(cname); }
+function viewParts(cname){ openEditCust(cname); }
+
 function loadDriveLog(){
   try {
     const logs = JSON.parse(localStorage.getItem("obaLogs")||"[]");
