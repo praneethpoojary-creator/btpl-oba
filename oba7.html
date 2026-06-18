@@ -4,9 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BTPL OBA v3</title>
-<script src="./libs/jspdf.min.js"></script>
-<script src="./libs/jsQR.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -557,7 +556,7 @@ function togStatus(t) {
 }
 
 
-// ── LOGIN SYSTEM ─────────────────────────────────────────────
+// -- LOGIN SYSTEM ---------------------------------------------
 const USERS = {
   "pooja kn":  { password: "btpl@admin123",   role: "admin", display: "Pooja KN" },
   "praneeth":  { password: "btpl@praneeth123", role: "user",  display: "Praneeth" },
@@ -693,7 +692,7 @@ window.addEventListener("load", function(){
 });
 
 
-// ── Customer → Model/Part mapping ─────────────────────────────
+// -- Customer - Model/Part mapping -----------------------------
 const CUSTOMER_DATA = {
   "Ao Smith":    { models:["ATOM 1.0","ATOM 2.0","Z9 Green RO","Z9 Green","Other"], parts:["20003S8A5-V1","20003S8A4-V1","20004S8A1-V1","Other"] },
   "Drink Prime": { models:["DP-100","DP-200","DP-300","Other"], parts:["DP100-001","DP200-001","DP300-001","Other"] },
@@ -904,7 +903,7 @@ function onCustomerChange(){
     data.parts.forEach(function(p){
       var o = document.createElement("option");
       o.value = p;
-      o.textContent = p.split(" - ")[0].split(" — ")[0].trim();
+      o.textContent = p.split(" - ")[0].split(" - ")[0].trim();
       pSel.appendChild(o);
     });
     pSel.style.display="block";
@@ -1084,7 +1083,7 @@ function buildPDFDoc(){
 
   doc.setLineWidth(0.2);
 
-  // ─── ROW 0: HEADER  -  Logo | Title ───────────────────────────
+  // --- ROW 0: HEADER  -  Logo | Title ---------------------------
   const hH=14;
   FR(M,y,aw,hH,YEL,GRY);
   // Logo
@@ -1095,7 +1094,7 @@ function buildPDFDoc(){
   T("OUT of BOX AUDIT",PW/2,y+hH/2+2.5,15,BLK,true,"center");
   y+=hH;
 
-  // ─── ROW 1: Model | Customer | Qty | Sampling Note | Date ───
+  // --- ROW 1: Model | Customer | Qty | Sampling Note | Date ---
   const r1H=10;
   FR(M,y,aw,r1H,YEL,GRY);
   // col widths matching original
@@ -1122,7 +1121,7 @@ function buildPDFDoc(){
   T(fmtDate(gv("date")),fx+1.5,y+7.5,8,BLK,true);
   y+=r1H;
 
-  // ─── ROW 2: PartNo | Invoice | LotSize | InspStatus | OBABy ──
+  // --- ROW 2: PartNo | Invoice | LotSize | InspStatus | OBABy --
   const r2H=10;
   FR(M,y,aw,r2H,YEL,GRY);
   const i1w=50,i2w=30,i3w=30,i5w=30;
@@ -1158,11 +1157,11 @@ function buildPDFDoc(){
   T(gv("obaBy"),fx+1.5,y+7.5,7.5,BLK,true);
   y+=r2H;
 
-  // ─── TABLE COLUMNS setup ─────────────────────────────────────
+  // --- TABLE COLUMNS setup -------------------------------------
   const slW=14, cpW=58, remW=22;
   const sW=(aw-slW-cpW-remW)/n;
 
-  // ─── HEADER ROW: SL NO | Check points | OK/NOT OK | REMARKS ─
+  // --- HEADER ROW: SL NO | Check points | OK/NOT OK | REMARKS -
   // These 3 cells span vertically over 2 sub-rows (sample label + barcode)
   const thH=13; // total header height
   const thA=6;  // sample label sub-row
@@ -1197,13 +1196,13 @@ function buildPDFDoc(){
     const bv=(document.getElementById("bc"+(i+1))||{}).value||"";
     if(bv){
       FR(sx+0.5,y+thA+0.5,sW-1,thB-1,[255,255,255],LGRY);
-      const d=bv.length>Math.floor((sW-1)/1.8)?bv.substring(0,Math.floor((sW-1)/1.8)-1)+"…":bv;
+      const d=bv.length>Math.floor((sW-1)/1.8)?bv.substring(0,Math.floor((sW-1)/1.8)-1)+"-":bv;
       T(d,sx+sW/2,y+thA+thB/2+2,5.5,[0,100,0],true,"center");
     }
   }
   y+=thH;
 
-  // ─── CHECKPOINT ROWS ────────────────────────────────────────
+  // --- CHECKPOINT ROWS ----------------------------------------
   const CPS2=[
     "Check for any damages in  packing box and  honey comb",
     "Verify the product as per OQC checklist",
@@ -1240,7 +1239,7 @@ function buildPDFDoc(){
     y+=cpRH;
   });
 
-  // ─── NOTE / NC / VERIFIED ───────────────────────────────────
+  // --- NOTE / NC / VERIFIED -----------------------------------
   const btH=6.5;
   FR(M,y,aw,btH,YEL,GRY);
   T("Note : If any Non-Conformance observed, Reject & Re-inspect the Lot",M+2,y+btH/2+2,7.5,RED,true);
@@ -1254,7 +1253,7 @@ function buildPDFDoc(){
   T(gv("verBy"),M+26,y+btH/2+2,7.5,BLK,false);
   y+=btH;
 
-  // ─── FOOTER  -  pinned to bottom ───────────────────────────────
+  // --- FOOTER  -  pinned to bottom -------------------------------
   const ftH=7, footY=PH-M-ftH;
   FR(M,footY,aw,ftH,YEL,GRY);
   const fc1=aw*0.4, fc2=aw*0.3;
@@ -1331,7 +1330,7 @@ function closePreview(){
 }
 
 async function doSubmit(){
-  // ── Validate all required fields ─────────────────────────
+  // -- Validate all required fields -------------------------
   if(!gv("customer"))  { showToast("⚠ Required: Customer",true);      return; }
   if(!gv("partNo"))    { showToast("⚠ Required: Part Number",true);   return; }
   if(!gv("modelName")) { showToast("⚠ Required: Model Name",true);    return; }
@@ -1340,7 +1339,7 @@ async function doSubmit(){
   if(!gv("obaBy"))     { showToast("⚠ Required: OBA Done By",true);   return; }
   if(!STATUS)          { showToast("⚠ Required: Inspection Status",true); return; }
 
-  // ── Validate all checkpoints filled ──────────────────────
+  // -- Validate all checkpoints filled ----------------------
   var cpRows = document.querySelectorAll("#xbody tr");
   for(var ri=0; ri<cpRows.length; ri++){
     var hasAny = cpRows[ri].querySelector(".ok-on,.nok-on");
@@ -1359,7 +1358,7 @@ async function doSubmit(){
     }
   }
 
-  // ── All barcodes required ────────────────────────────────
+  // -- All barcodes required --------------------------------
   for(var i=1;i<=N;i++){
     var bc = (document.getElementById("bc"+i)||{}).value||"";
     if(!bc.trim()){
@@ -1381,7 +1380,7 @@ async function submitFromPreview(){
   await uploadToDrive(pendingPDF);
 }
 
-// ── Google Drive Upload via Apps Script ───────────────────────
+// -- Google Drive Upload via Apps Script -----------------------
 const CLIENT_ID  = "818103137759-42ia4ce8o1o8r1gjuv1buu9n7njf02mm.apps.googleusercontent.com";
 const FOLDER_ID  = "1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd";
 const FOLDER_URL = "https://drive.google.com/drive/folders/1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd";
@@ -1474,7 +1473,7 @@ async function uploadToDrive({doc, filename}){
     console.error("Upload error:", err);
     setStatus("❌ Upload failed: " + err.message, "err");
     setBtns(false, "☁ Submit to Drive");
-    showToast("❌ Upload failed — check internet connection", true);
+    showToast("❌ Upload failed - check internet connection", true);
   }
 }
 
