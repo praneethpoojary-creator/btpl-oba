@@ -692,7 +692,7 @@ window.addEventListener("load", function(){
 });
 
 
-// -- Customer → Model/Part mapping -----------------------------
+// -- Customer -> Model/Part mapping -----------------------------
 const CUSTOMER_DATA = {
   "Ao Smith":    { models:["ATOM 1.0","ATOM 2.0","Z9 Green RO","Z9 Green","Other"], parts:["20003S8A5-V1","20003S8A4-V1","20004S8A1-V1","Other"] },
   "Drink Prime": { models:["DP-100","DP-200","DP-300","Other"], parts:["DP100-001","DP200-001","DP300-001","Other"] },
@@ -903,7 +903,7 @@ function onCustomerChange(){
     data.parts.forEach(function(p){
       var o = document.createElement("option");
       o.value = p;
-      o.textContent = p.split(" - ")[0].split(" — ")[0].trim();
+      o.textContent = p.split(" - ")[0].split(" - ")[0].trim();
       pSel.appendChild(o);
     });
     pSel.style.display="block";
@@ -1196,7 +1196,7 @@ function buildPDFDoc(){
     const bv=(document.getElementById("bc"+(i+1))||{}).value||"";
     if(bv){
       FR(sx+0.5,y+thA+0.5,sW-1,thB-1,[255,255,255],LGRY);
-      const d=bv.length>Math.floor((sW-1)/1.8)?bv.substring(0,Math.floor((sW-1)/1.8)-1)+"…":bv;
+      const d=bv.length>Math.floor((sW-1)/1.8)?bv.substring(0,Math.floor((sW-1)/1.8)-1)+"...":bv;
       T(d,sx+sW/2,y+thA+thB/2+2,5.5,[0,100,0],true,"center");
     }
   }
@@ -1473,7 +1473,7 @@ async function uploadToDrive({doc, filename}){
     console.error("Upload error:", err);
     setStatus("❌ Upload failed: " + err.message, "err");
     setBtns(false, "☁ Submit to Drive");
-    showToast("❌ Upload failed — check internet connection", true);
+    showToast("❌ Upload failed - check internet connection", true);
   }
 }
 
