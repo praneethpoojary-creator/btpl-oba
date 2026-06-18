@@ -1330,7 +1330,43 @@ function closePreview(){
   pendingPDF=null;
 }
 
-async function doSubmit(){
+async async function doSubmit(){
+  // ── Validate all required fields ─────────────────────────
+  if(!gv("customer"))  { showToast("⚠ Required: Customer",true);      return; }
+  if(!gv("partNo"))    { showToast("⚠ Required: Part Number",true);   return; }
+  if(!gv("modelName")) { showToast("⚠ Required: Model Name",true);    return; }
+  if(!gv("quantity"))  { showToast("⚠ Required: Quantity",true);      return; }
+  if(!gv("invoiceNo")) { showToast("⚠ Required: Invoice Number",true);return; }
+  if(!gv("obaBy"))     { showToast("⚠ Required: OBA Done By",true);   return; }
+  if(!STATUS)          { showToast("⚠ Required: Inspection Status",true); return; }
+
+  // ── Validate all checkpoints filled ──────────────────────
+  var cpRows = document.querySelectorAll("#xbody tr");
+  for(var ri=0; ri<cpRows.length; ri++){
+    var hasAny = cpRows[ri].querySelector(".ok-on,.nok-on");
+    if(!hasAny){
+      showToast("⚠ Fill checkpoint " + (ri+1), true);
+      cpRows[ri].scrollIntoView({behavior:"smooth"});
+      return;
+    }
+    // If NOT OK, remarks must be filled
+    if(cpRows[ri].querySelector(".nok-on")){
+      var rem = cpRows[ri].querySelector(".rem-inp");
+      if(rem && (!rem.value.trim() || rem.value.trim()==="NA")){
+        showToast("⚠ Enter remarks for checkpoint " + (ri+1), true);
+        rem.focus(); return;
+      }
+    }
+  }
+
+  // ── At least 1 barcode ───────────────────────────────────
+  var hasBarcode = false;
+  for(var i=1;i<=N;i++){
+    if((document.getElementById("bc"+i)||{}).value.trim()) hasBarcode=true;
+  }
+  if(!hasBarcode){ showToast("⚠ Scan at least 1 barcode",true); return; }
+
+  if(!confirm("Submit OBA checklist to Google Drive?")) return;
   const result = buildPDFDoc();
   window._pendingPDF = result;
   await uploadToDrive(result);
