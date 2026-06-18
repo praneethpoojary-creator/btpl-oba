@@ -1671,7 +1671,32 @@ function openEditCust(cname){
 function closeEditCust(){
   document.getElementById("editCustModal").style.display = "none";
   renderCustomersList();
-  refreshCustomerDropdown();
+  // Fully rebuild customer dropdown with updated parts
+  rebuildCustomerDropdown();
+}
+
+function rebuildCustomerDropdown(){
+  var sel     = document.getElementById("customerSelect");
+  var current = sel.value;
+  // Remove all options except first (-- Select --) and last (Other)
+  while(sel.options.length > 1){
+    sel.remove(1);
+  }
+  // Re-add all customers
+  var allCust = getCombinedCustomerData();
+  Object.keys(allCust).forEach(function(name){
+    var o = document.createElement("option");
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+  // Add Other option
+  var other = document.createElement("option");
+  other.value = "__other__"; other.textContent = "Other (type below)";
+  sel.appendChild(other);
+  // Restore selection
+  sel.value = current;
+  // If customer was selected, re-trigger to refresh parts dropdown
+  if(current && current !== "__other__") onCustomerChange();
 }
 function saveEditCustName(){
   var oldName = document.getElementById("editCustKey").value;
