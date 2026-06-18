@@ -1404,27 +1404,26 @@ function adminTab(tab){
 
 function renderUsersList(){
   var allUsers = getCombinedUsers();
-  var html = "";
-  var keys = Object.keys(allUsers);
-  for(var i=0;i<keys.length;i++){
-    var uname   = keys[i];
+  var container = document.getElementById("usersList");
+  container.innerHTML = "";
+  Object.keys(allUsers).forEach(function(uname){
     var udata   = allUsers[uname];
     var builtIn = USERS[uname] ? true : false;
-    var roleBg  = udata.role==="admin" ? "#fef9c3" : "#dcfce7";
-    var roleClr = udata.role==="admin" ? "#92400e" : "#166534";
-    html += "<div style='display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;font-size:12px;'>";
-    html += "<div>";
-    html += "<b>" + (udata.display||uname) + "</b>";
-    html += " <span style='color:#888;'>@" + uname + "</span>";
-    html += " <span style='background:" + roleBg + ";color:" + roleClr + ";padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;'>" + udata.role + "</span>";
-    if(builtIn) html += " <span style='color:#aaa;font-size:10px;'>(built-in)</span>";
-    html += "</div>";
-    if(!builtIn){ var dBtn = document.createElement("button"); dBtn.textContent="Delete"; dBtn.style.cssText="background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;"; dBtn.setAttribute("data-user", uname); dBtn.onclick=function(){ deleteUser(this.getAttribute("data-user")); }; html += dBtn.outerHTML; }
-    html += "</div>";
-  }
-  document.getElementById("usersList").innerHTML = html;
+    var div = document.createElement("div");
+    div.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;font-size:12px;";
+    var info = document.createElement("div");
+    info.innerHTML = "<b>" + (udata.display||uname) + "</b> <span style='color:#888;'>@" + uname + "</span> <span style='background:" + (udata.role==="admin"?"#fef9c3":"#dcfce7") + ";color:" + (udata.role==="admin"?"#92400e":"#166534") + ";padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;'>" + udata.role + "</span>" + (builtIn?" <span style='color:#aaa;font-size:10px;'>(built-in)</span>":"");
+    div.appendChild(info);
+    if(!builtIn){
+      var btn = document.createElement("button");
+      btn.textContent = "Delete";
+      btn.style.cssText = "background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
+      (function(u){ btn.onclick = function(){ deleteUser(u); }; })(uname);
+      div.appendChild(btn);
+    }
+    container.appendChild(div);
+  });
 }
-
 function addNewUser(){
   var name     = document.getElementById("newUserName").value.trim();
   var username = document.getElementById("newUserUsername").value.trim().toLowerCase();
@@ -1452,29 +1451,41 @@ function deleteUser(username){
 }
 
 function renderCustomersList(){
-  var allCust = getCombinedCustomerData();
-  var html = "";
-  var keys = Object.keys(allCust);
-  for(var i=0;i<keys.length;i++){
-    var cname   = keys[i];
+  var allCust   = getCombinedCustomerData();
+  var container = document.getElementById("customersList");
+  container.innerHTML = "";
+  Object.keys(allCust).forEach(function(cname){
     var cdata   = allCust[cname];
     var builtIn = CUSTOMER_DATA[cname] ? true : false;
     var partCount   = cdata.parts.length;
-    var partPreview = cdata.parts.slice(0,3).map(function(p){ return p.split(" — ")[0]; }).join(", ") + (partCount>3?"...":"");
-    html += "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden;'>";
-    html += "<div style='display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0;'>";
-    html += "<b>" + cname + "</b>";
-    html += "<div style='display:flex;gap:6px;'>";
-    if(!builtIn){ var dcBtn = document.createElement("button"); dcBtn.textContent="Delete"; dcBtn.style.cssText="background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;"; dcBtn.setAttribute("data-cust",cname); dcBtn.onclick=function(){ deleteCustomer(this.getAttribute("data-cust")); }; html += dcBtn.outerHTML; }
-    html += "</div></div>";
-    html += "<div style='padding:8px 10px;font-size:11px;color:#555;'>";
-    html += "<b>Parts (" + partCount + "):</b> " + partPreview;
-    var mpBtn = document.createElement("button"); mpBtn.textContent="+ Add Part"; mpBtn.style.cssText="background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:8px;"; mpBtn.setAttribute("data-cust",cname); mpBtn.onclick=function(){ manageParts(this.getAttribute("data-cust")); }; html += mpBtn.outerHTML;
-    html += "</div></div>";
-  }
-  document.getElementById("customersList").innerHTML = html;
+    var partPreview = cdata.parts.slice(0,3).map(function(p){ return p.split("—")[0].trim(); }).join(", ") + (partCount>3?"...":"");
+    var wrapper = document.createElement("div");
+    wrapper.style.cssText = "background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden;";
+    var header = document.createElement("div");
+    header.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0;";
+    var title = document.createElement("b");
+    title.textContent = cname;
+    header.appendChild(title);
+    if(!builtIn){
+      var delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.style.cssText = "background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
+      (function(n){ delBtn.onclick = function(){ deleteCustomer(n); }; })(cname);
+      header.appendChild(delBtn);
+    }
+    wrapper.appendChild(header);
+    var body = document.createElement("div");
+    body.style.cssText = "padding:8px 10px;font-size:11px;color:#555;";
+    body.innerHTML = "<b>Parts (" + partCount + "):</b> " + partPreview;
+    var addBtn = document.createElement("button");
+    addBtn.textContent = "+ Add Part";
+    addBtn.style.cssText = "background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:8px;";
+    (function(n){ addBtn.onclick = function(){ manageParts(n); }; })(cname);
+    body.appendChild(addBtn);
+    wrapper.appendChild(body);
+    container.appendChild(wrapper);
+  });
 }
-
 function addNewCustomer(){
   var name = document.getElementById("newCustName").value.trim();
   if(!name){ showToast("Enter customer name!", true); return; }
