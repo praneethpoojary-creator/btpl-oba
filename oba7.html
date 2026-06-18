@@ -1359,6 +1359,17 @@ async async function doSubmit(){
     }
   }
 
+  // ── All barcodes required ────────────────────────────────
+  for(var i=1;i<=N;i++){
+    var bc = (document.getElementById("bc"+i)||{}).value||"";
+    if(!bc.trim()){
+      showToast("⚠ Required: Sample " + i + " Barcode", true);
+      var bcEl = document.getElementById("bc"+i);
+      if(bcEl) bcEl.focus();
+      return;
+    }
+  }
+
   if(!confirm("Submit OBA checklist to Google Drive?")) return;
   const result = buildPDFDoc();
   window._pendingPDF = result;
