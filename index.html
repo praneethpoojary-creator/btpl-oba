@@ -1509,8 +1509,7 @@ function deleteCustomer(name){
 }
 
 function manageParts(custName){
-  var partNo = prompt("Add Part Number for " + custName + "
-Format: PART-001 or PART-001 - Description");
+  var partNo = prompt("Add Part Number for " + custName + " (e.g. PART-001 or PART-001 - Description)");
   if(!partNo) return;
   var extra    = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
   var allCust  = getCombinedCustomerData();
@@ -1533,7 +1532,7 @@ function refreshCustomerDropdown(){
     if(!existing.includes(name)){
       var o = document.createElement("option");
       o.value = name; o.textContent = name;
-      sel.insertBefore(o, sel.querySelector('option[value="__other__"]'));
+      sel.insertBefore(o, document.querySelector('#customerSelect option[value="__other__"]'));
     }
   }
 }
