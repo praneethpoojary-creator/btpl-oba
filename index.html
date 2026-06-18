@@ -1359,13 +1359,6 @@ async async function doSubmit(){
     }
   }
 
-  // ── At least 1 barcode ───────────────────────────────────
-  var hasBarcode = false;
-  for(var i=1;i<=N;i++){
-    if((document.getElementById("bc"+i)||{}).value.trim()) hasBarcode=true;
-  }
-  if(!hasBarcode){ showToast("⚠ Scan at least 1 barcode",true); return; }
-
   if(!confirm("Submit OBA checklist to Google Drive?")) return;
   const result = buildPDFDoc();
   window._pendingPDF = result;
