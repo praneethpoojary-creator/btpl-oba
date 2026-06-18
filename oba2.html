@@ -520,7 +520,6 @@ function doLogin(){
     
     // Hide login, show app
     errDiv.style.display = "none";
-    localStorage.setItem("btpl_session", JSON.stringify({user:username, role:CURRENT_ROLE, time:Date.now()}));
     showApp(username, CURRENT_ROLE);
 
   } else {
@@ -549,9 +548,10 @@ function getCombinedUsers(){
 
 function autoLogin(){
   try {
-    const session = JSON.parse(localStorage.getItem("btpl_session")||"null");
-    if(!session) return false;
-    // Session valid for 8 hours
+    const raw = localStorage.getItem("btpl_session");
+    if(!raw) return false;
+    const session = JSON.parse(raw);
+    if(!session || !session.user || !session.role) return false;
     if(Date.now() - session.time > 8*60*60*1000){
       localStorage.removeItem("btpl_session"); return false;
     }
@@ -561,11 +561,16 @@ function autoLogin(){
     CURRENT_ROLE = session.role;
     showApp(CURRENT_USER, CURRENT_ROLE);
     return true;
-  } catch(e){ return false; }
+  } catch(e){
+    localStorage.removeItem("btpl_session");
+    return false;
+  }
 }
 
 function showApp(username, role){
   const allUsers = getCombinedUsers();
+  // Save session
+  try{ localStorage.setItem("btpl_session", JSON.stringify({user:username, role:role, time:Date.now()})); }catch(e){}
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("mainApp").style.display = "block";
   const userBar = document.getElementById("userBar");
