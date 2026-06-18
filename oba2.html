@@ -395,9 +395,9 @@ function togStatus(t) {
 
 // ── LOGIN SYSTEM ─────────────────────────────────────────────
 const USERS = {
-  "admin":  { password: "btpl@admin123", role: "admin" },
-  "user1":  { password: "btpl@user123",  role: "user"  },
-  "user2":  { password: "btpl@user456",  role: "user"  }
+  "pooja kn":  { password: "btpl@admin123",   role: "admin", display: "Pooja KN" },
+  "praneeth":  { password: "btpl@praneeth123", role: "user",  display: "Praneeth" },
+  "sachin":    { password: "btpl@Sachin123",   role: "user",  display: "Sachin" }
 };
 
 let CURRENT_USER = null;
@@ -420,7 +420,7 @@ function doLogin(){
     const userBar = document.getElementById("userBar");
     userBar.style.display = "flex";
     document.getElementById("userBarName").innerHTML = 
-      "👤 " + username.toUpperCase() + 
+      "👤 " + USERS[username].display + 
       " &nbsp;|&nbsp; Role: <b>" + (CURRENT_ROLE==="admin"?"Admin":"User") + "</b>";
 
     // Admin gets edit link, User gets view-only link
