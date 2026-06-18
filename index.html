@@ -853,12 +853,11 @@ function getCombinedCustomerData(){
   try {
     var extra  = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
     var result = {};
-    // Start with built-in data
     Object.keys(CUSTOMER_DATA).forEach(function(k){
+      var useParts = (extra[k] && extra[k].parts) ? extra[k].parts : CUSTOMER_DATA[k].parts;
       result[k] = {
         models: CUSTOMER_DATA[k].models.slice(),
-        // If localStorage has parts for this customer, USE THOSE (overrides built-in)
-        parts: extra[k] ? extra[k].parts.slice() : CUSTOMER_DATA[k].parts.slice()
+        parts: useParts.slice()
       };
     });
     // Add extra customers not in built-in
@@ -900,13 +899,12 @@ function onCustomerChange(){
 
   var allCustData = getCombinedCustomerData();
   if(chosen && allCustData[chosen]){
-    const data = allCustData[chosen];
-    // Show part number dropdown - only show part number code (before  - )
+    var data = allCustData[chosen];
     pSel.innerHTML = '<option value="">-- Select Part Number --</option>';
-    data.parts.forEach(p => {
-      const o=document.createElement("option");
-      o.value=p;
-      o.textContent=p.split(" - ")[0].split(" — ")[0].trim();
+    data.parts.forEach(function(p){
+      var o = document.createElement("option");
+      o.value = p;
+      o.textContent = p.split(" - ")[0].split(" — ")[0].trim();
       pSel.appendChild(o);
     });
     pSel.style.display="block";
