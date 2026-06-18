@@ -1288,13 +1288,48 @@ function openScanner(inputId, label){
   startZXing();
 }
 
-function startZXing(){
+async function startZXing(){
   try {
     if(typeof ZXing === "undefined"){
       document.getElementById("scannerStatus").textContent = "⚠ Scanner loading... use manual entry below.";
       return;
     }
+
+    // Get camera stream with best settings for barcode scanning
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width:  { ideal: 1920 },
+        height: { ideal: 1080 },
+        focusMode: { ideal: "continuous" },
+        advanced: [{ focusMode: "continuous" }]
+      }
+    });
+
+    const video = document.getElementById("scannerVideo");
+    video.srcObject = stream;
+    await video.play();
+
+    // Apply continuous autofocus on the track
+    const track = stream.getVideoTracks()[0];
+    try {
+      await track.applyConstraints({
+        advanced: [{ focusMode: "continuous" }]
+      });
+    } catch(e){ /* focusMode not supported on all devices */ }
+
+    // Touch to focus
+    video.addEventListener("click", async () => {
+      try {
+        await track.applyConstraints({ advanced: [{ focusMode: "single-shot" }] });
+        setTimeout(async ()=>{
+          try{ await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); }catch(e){}
+        }, 500);
+      } catch(e){}
+    });
+
     const hints = new Map();
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
     hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
       ZXing.BarcodeFormat.QR_CODE,
       ZXing.BarcodeFormat.CODE_128,
@@ -1306,8 +1341,9 @@ function startZXing(){
       ZXing.BarcodeFormat.UPC_A,
       ZXing.BarcodeFormat.UPC_E
     ]);
-    zxingReader = new ZXing.BrowserMultiFormatReader(hints);
-    zxingReader.decodeFromVideoDevice(null, "scannerVideo", (result, err) => {
+
+    zxingReader = new ZXing.BrowserMultiFormatReader(hints, 300);
+    zxingReader.decodeFromStream(stream, video, (result, err) => {
       if(result){
         const val = result.getText();
         document.getElementById(scannerTargetId).value = val;
@@ -1317,17 +1353,20 @@ function startZXing(){
         setTimeout(closeScanner, 600);
       }
     });
-    document.getElementById("scannerStatus").textContent = "📷 Point camera at barcode in the green box...";
+
+    document.getElementById("scannerStatus").textContent = "📷 Hold camera steady — tap screen to focus";
+
   } catch(e){
-    document.getElementById("scannerStatus").textContent = "❌ Camera error — use manual entry below.";
+    console.error(e);
+    document.getElementById("scannerStatus").textContent = "❌ " + e.message + " — Use manual entry below.";
   }
 }
 
 function closeScanner(){
   try{ if(zxingReader){ zxingReader.reset(); zxingReader=null; } }catch(e){}
-  document.getElementById("scannerModal").classList.remove("active");
   const v = document.getElementById("scannerVideo");
   if(v && v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; }
+  document.getElementById("scannerModal").classList.remove("active");
   scannerTargetId = null;
 }
 
