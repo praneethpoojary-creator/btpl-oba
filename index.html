@@ -849,10 +849,22 @@ function resetCustomer(){
 }
 
 function getCombinedCustomerData(){
-  // Get admin-added customers from localStorage
   try {
-    const extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
-    return Object.assign({}, CUSTOMER_DATA, extra);
+    var extra  = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+    var result = {};
+    // Start with built-in data
+    Object.keys(CUSTOMER_DATA).forEach(function(k){
+      result[k] = {
+        models: CUSTOMER_DATA[k].models.slice(),
+        // If localStorage has parts for this customer, USE THOSE (overrides built-in)
+        parts: extra[k] ? extra[k].parts.slice() : CUSTOMER_DATA[k].parts.slice()
+      };
+    });
+    // Add extra customers not in built-in
+    Object.keys(extra).forEach(function(k){
+      if(!result[k]) result[k] = { models: extra[k].models||["Other"], parts: extra[k].parts||[] };
+    });
+    return result;
   } catch(e){ return CUSTOMER_DATA; }
 }
 
