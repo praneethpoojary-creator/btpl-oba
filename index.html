@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BTPL OBA v3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
@@ -69,6 +70,22 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
 .btn-pdf { background: #1a3a6b; color: #fff; padding: 8px 22px; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .btn-pdf:hover { background: #0d2852; }
 .btn-rst { background: #fff; color: #555; border: 1px solid #bbb; padding: 10px 16px; border-radius: 4px; font-size: 13px; cursor: pointer; touch-action: manipulation; }
+/* Barcode Scanner Modal */
+.scanner-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:5000;flex-direction:column;align-items:center;justify-content:center;}
+.scanner-overlay.active{display:flex;}
+.scanner-box{background:#000;border-radius:12px;overflow:hidden;width:90%;max-width:400px;}
+.scanner-header{background:#1a3a6b;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;}
+.scanner-body{position:relative;background:#000;}
+.scanner-body video{width:100%;display:block;}
+.scanner-body canvas{display:none;}
+.scanner-line{position:absolute;top:50%;left:10%;right:10%;height:2px;background:#16a34a;box-shadow:0 0 8px #16a34a;animation:scanline 1.5s ease-in-out infinite;}
+@keyframes scanline{0%,100%{top:30%;}50%{top:70%;}}
+.scanner-footer{background:#111;padding:10px;display:flex;gap:8px;}
+.scanner-footer input{flex:1;background:#222;border:1px solid #444;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;outline:none;}
+.scanner-footer button{background:#16a34a;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;}
+.scanner-cancel{background:#dc2626;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;}
+.scanner-status{background:#111;color:#aaa;padding:6px 14px;font-size:11px;text-align:center;}
+
 .toast { position: fixed; bottom: 20px; right: 20px; background: #16a34a; color: #fff; padding: 9px 18px; border-radius: 5px; font-size: 13px; display: none; z-index: 999; }
 .toast.error { background: #dc2626; }
 
@@ -327,6 +344,26 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
   <button class="btn-submit" onclick="doSubmit()" id="submitBtn">&#9729; Submit to Drive</button>
 </div>
 <div class="toast" id="toast"></div>
+
+<!-- Barcode Scanner Modal -->
+<div class="scanner-overlay" id="scannerModal">
+  <div class="scanner-box">
+    <div class="scanner-header">
+      <span>📷 Scan Barcode — <span id="scannerLabel">Sample</span></span>
+      <button onclick="closeScanner()" class="scanner-cancel">✕</button>
+    </div>
+    <div class="scanner-body">
+      <video id="scannerVideo" autoplay playsinline muted></video>
+      <canvas id="scannerCanvas"></canvas>
+      <div class="scanner-line"></div>
+    </div>
+    <div class="scanner-status" id="scannerStatus">📷 Point camera at barcode...</div>
+    <div class="scanner-footer">
+      <input type="text" id="manualBarcode" placeholder="Or type barcode manually..." autocomplete="off">
+      <button onclick="saveManualBarcode()">✔ Save</button>
+    </div>
+  </div>
+</div>
 </div><!-- end mainApp -->
 
 <!-- Preview Modal -->
@@ -702,12 +739,17 @@ function buildTable(n) {
     <th style="width:75px;" rowspan="2">REMARKS</th>
   </tr><tr>`;
   for(let i=1;i<=n;i++){
-    h+=`<th style="width:${sw}px;padding:2px 2px 2px 2px;vertical-align:top;">
-      <div style="font-weight:700;font-size:10px;margin-bottom:3px;">Sample ${i} :</div>
-      <input class="bc-inp" id="bc${i}" type="text" placeholder="Scan barcode..."
-        oninput="this.classList.toggle('ok',this.value.trim().length>0)"
-        autocomplete="off" spellcheck="false"
-        style="width:100%;border:1px solid #ccc;border-radius:2px;font-family:monospace;font-size:9px;padding:2px;text-align:center;background:#fff;font-weight:normal;">
+    h+=`<th style="width:${sw}px;padding:2px;vertical-align:top;">
+      <div style="font-weight:700;font-size:10px;margin-bottom:2px;">Sample ${i} :</div>
+      <div style="display:flex;gap:2px;align-items:center;">
+        <input class="bc-inp" id="bc${i}" type="text" placeholder="Barcode..."
+          oninput="this.classList.toggle('ok',this.value.trim().length>0)"
+          autocomplete="off" spellcheck="false"
+          style="flex:1;border:1px solid #ccc;border-radius:2px;font-family:monospace;font-size:9px;padding:2px;text-align:center;background:#fff;">
+        <button onclick="openScanner('bc${i}','Sample ${i}')"
+          style="background:#1a3a6b;color:#fff;border:none;border-radius:2px;padding:2px 4px;font-size:10px;cursor:pointer;flex-shrink:0;"
+          title="Scan barcode">📷</button>
+      </div>
     </th>`;
   }
   h+=`</tr>`;
@@ -1212,6 +1254,69 @@ function addDriveLog(filename){
     }
   } catch(e){ console.log("Log error:", e); }
 }
+
+
+// ── BARCODE SCANNER ──────────────────────────────────────────
+let scannerStream = null;
+let scannerInterval = null;
+let scannerTargetId = null;
+
+function openScanner(inputId, label){
+  scannerTargetId = inputId;
+  document.getElementById("scannerLabel").textContent = label;
+  document.getElementById("scannerStatus").textContent = "📷 Point camera at barcode...";
+  document.getElementById("manualBarcode").value = "";
+  document.getElementById("scannerModal").classList.add("active");
+
+  const video = document.getElementById("scannerVideo");
+  const canvas = document.getElementById("scannerCanvas");
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+      scannerStream = stream;
+      video.srcObject = stream;
+      video.play();
+      scannerInterval = setInterval(() => {
+        if(video.readyState === video.HAVE_ENOUGH_DATA){
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          if(code){
+            document.getElementById(scannerTargetId).value = code.data;
+            document.getElementById("scannerStatus").textContent = "✅ Scanned: " + code.data;
+            setTimeout(closeScanner, 800);
+          }
+        }
+      }, 200);
+    })
+    .catch(err => {
+      document.getElementById("scannerStatus").textContent = "❌ Camera error: " + err.message + " — Use manual entry below.";
+    });
+}
+
+function closeScanner(){
+  if(scannerStream){ scannerStream.getTracks().forEach(t=>t.stop()); scannerStream=null; }
+  if(scannerInterval){ clearInterval(scannerInterval); scannerInterval=null; }
+  document.getElementById("scannerModal").classList.remove("active");
+  document.getElementById("scannerVideo").srcObject = null;
+}
+
+function saveManualBarcode(){
+  const val = document.getElementById("manualBarcode").value.trim();
+  if(val && scannerTargetId){
+    document.getElementById(scannerTargetId).value = val;
+    closeScanner();
+  }
+}
+
+// Allow Enter in manual input
+document.addEventListener("DOMContentLoaded", ()=>{
+  const mi = document.getElementById("manualBarcode");
+  if(mi) mi.addEventListener("keydown", e=>{ if(e.key==="Enter") saveManualBarcode(); });
+});
 
 function gv(id){
   if(id==="customer"){
