@@ -347,53 +347,39 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
 
 <!-- Barcode Scanner Modal -->
 <div class="scanner-overlay" id="scannerModal">
-  <div style="background:#000;border-radius:14px;overflow:hidden;width:95%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-    
-    <!-- Header -->
+  <div style="background:#000;border-radius:14px;overflow:hidden;width:95%;max-width:420px;">
     <div style="background:#1a3a6b;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:14px;font-weight:700;">🔲 <span id="scannerLabel">Sample</span></span>
-      <button onclick="closeScanner()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;">✕ Close</button>
+      <button onclick="closeScanner()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;">✕</button>
     </div>
-
-    <!-- Camera view -->
     <div style="position:relative;background:#000;">
       <video id="scannerVideo" autoplay playsinline muted 
         style="width:100%;height:260px;object-fit:cover;display:block;"></video>
-      <!-- Guide overlay -->
       <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-        <div style="width:240px;height:140px;border:3px solid #16a34a;border-radius:10px;
-          box-shadow:0 0 0 1000px rgba(0,0,0,0.5);position:relative;">
-          <!-- Corner marks -->
-          <div style="position:absolute;top:-3px;left:-3px;width:20px;height:20px;border-top:4px solid #fff;border-left:4px solid #fff;border-radius:2px 0 0 0;"></div>
-          <div style="position:absolute;top:-3px;right:-3px;width:20px;height:20px;border-top:4px solid #fff;border-right:4px solid #fff;border-radius:0 2px 0 0;"></div>
-          <div style="position:absolute;bottom:-3px;left:-3px;width:20px;height:20px;border-bottom:4px solid #fff;border-left:4px solid #fff;border-radius:0 0 0 2px;"></div>
-          <div style="position:absolute;bottom:-3px;right:-3px;width:20px;height:20px;border-bottom:4px solid #fff;border-right:4px solid #fff;border-radius:0 0 2px 0;"></div>
-          <!-- Scan line -->
-          <div id="scanAnimLine" style="position:absolute;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,#16a34a,transparent);animation:scanline 1.8s ease-in-out infinite;"></div>
+        <div style="width:240px;height:120px;position:relative;">
+          <div style="position:absolute;inset:0;box-shadow:0 0 0 1000px rgba(0,0,0,0.55);border-radius:4px;"></div>
+          <div style="position:absolute;inset:0;border:2px solid #16a34a;border-radius:4px;"></div>
+          <div style="position:absolute;top:0;left:0;width:18px;height:18px;border-top:3px solid #fff;border-left:3px solid #fff;"></div>
+          <div style="position:absolute;top:0;right:0;width:18px;height:18px;border-top:3px solid #fff;border-right:3px solid #fff;"></div>
+          <div style="position:absolute;bottom:0;left:0;width:18px;height:18px;border-bottom:3px solid #fff;border-left:3px solid #fff;"></div>
+          <div style="position:absolute;bottom:0;right:0;width:18px;height:18px;border-bottom:3px solid #fff;border-right:3px solid #fff;"></div>
+          <div id="scanLine2" style="position:absolute;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,#16a34a,transparent);top:50%;animation:scanline 1.8s ease-in-out infinite;"></div>
         </div>
       </div>
-      <!-- Tap to focus hint -->
-      <div id="tapFocusRing" style="position:absolute;width:60px;height:60px;border:2px solid #fff;border-radius:50%;display:none;pointer-events:none;transform:translate(-50%,-50%);"></div>
+      <div id="tapFocusRing" style="position:absolute;width:50px;height:50px;border:2px solid #fff;border-radius:50%;display:none;pointer-events:none;transform:translate(-50%,-50%);transition:opacity 0.3s;"></div>
     </div>
-
-    <!-- Status -->
-    <div id="scannerStatus" style="background:#111;color:#aaa;padding:8px 14px;font-size:12px;text-align:center;min-height:32px;">
-      📷 Tap screen to focus • Hold steady near barcode
+    <div id="scannerStatus" style="background:#111;color:#aaa;padding:8px 14px;font-size:12px;text-align:center;">
+      📷 Tap screen to focus • Hold barcode in green box
     </div>
-
-    <!-- Manual entry -->
-    <div style="background:#1a1a1a;padding:12px 14px;display:flex;gap:8px;align-items:center;">
-      <span style="color:#888;font-size:11px;white-space:nowrap;">Type instead:</span>
-      <input type="text" id="manualBarcode" placeholder="Type barcode..."
+    <div style="background:#1a1a1a;padding:12px 14px;display:flex;gap:8px;">
+      <input type="text" id="manualBarcode" placeholder="Or type barcode manually..."
         style="flex:1;background:#333;border:1px solid #555;color:#fff;padding:8px 10px;border-radius:6px;font-size:13px;outline:none;font-family:monospace;"
         autocomplete="off" spellcheck="false">
       <button onclick="saveManualBarcode()"
         style="background:#16a34a;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">✔</button>
     </div>
-
   </div>
 </div>
-</div><!-- end mainApp -->
 
 <!-- Preview Modal -->
 <div class="modal-overlay" id="previewModal">
@@ -771,14 +757,14 @@ function buildTable(n) {
     h+=`<th style="width:${sw}px;padding:2px;vertical-align:top;">
       <div style="font-weight:700;font-size:10px;margin-bottom:2px;">Sample ${i} :</div>
       <div style="display:flex;gap:2px;align-items:center;">
-        <input class="bc-inp" id="bc${i}" type="text" placeholder="Scan/Type..."
+        <input class="bc-inp" id="bc${i}" type="text" placeholder="Tap 📷 to scan..."
           oninput="this.classList.toggle('ok',this.value.trim().length>0)"
           autocomplete="off" spellcheck="false"
           inputmode="text"
           style="flex:1;border:1px solid #ccc;border-radius:2px;font-family:monospace;font-size:9px;padding:2px;text-align:center;background:#fff;">
-        <button onclick="focusBcInput('bc${i}')"
+        <button onclick="openScanner('bc${i}','Sample ${i}')"
           style="background:#1a3a6b;color:#fff;border:none;border-radius:2px;padding:2px 4px;font-size:10px;cursor:pointer;flex-shrink:0;"
-          title="Click then scan">📷</button>
+          title="Scan barcode">📷</button>
       </div>
     </th>`;
   }
@@ -1290,18 +1276,6 @@ function addDriveLog(filename){
 let scannerTargetId = null;
 let scannerStream   = null;
 let scannerRAF      = null;
-let barcodeDetector = null;
-
-function focusBcInput(inputId){
-  // Focus the input field - then use phone keyboard barcode scan
-  // or any Bluetooth scanner will type directly into focused field
-  const inp = document.getElementById(inputId);
-  if(!inp) return;
-  inp.focus();
-  inp.select();
-  // Show hint toast
-  showToast("📷 Field ready — scan barcode now!", false);
-}
 
 function openScanner(inputId, label){
   scannerTargetId = inputId;
@@ -1313,165 +1287,113 @@ function openScanner(inputId, label){
 }
 
 async function startScanner(){
+  const video = document.getElementById("scannerVideo");
+  const status = document.getElementById("scannerStatus");
   try {
-    const video = document.getElementById("scannerVideo");
-
-    // Try to get camera with best focus settings
-    const constraints = {
-      video: {
-        facingMode: { ideal: "environment" },
-        width:  { ideal: 1280 },
-        height: { ideal: 720 },
-      }
-    };
-
-    scannerStream = await navigator.mediaDevices.getUserMedia(constraints);
+    // Use environment camera with HD resolution
+    scannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:"environment", width:{ideal:1280}, height:{ideal:720} }
+    });
     video.srcObject = scannerStream;
     await video.play();
 
-    // Try to apply continuous autofocus
     const track = scannerStream.getVideoTracks()[0];
-    const caps  = track.getCapabilities ? track.getCapabilities() : {};
 
-    // Apply best focus settings available
-    const focusConstraints = { advanced: [] };
-    if(caps.focusMode){
-      if(caps.focusMode.includes("continuous"))
-        focusConstraints.advanced.push({ focusMode: "continuous" });
-    }
-    if(caps.focusDistance){
-      // Set macro focus distance for close-up barcode scanning
-      focusConstraints.advanced.push({ focusDistance: 0.1 });
-    }
-    if(focusConstraints.advanced.length > 0){
-      try{ await track.applyConstraints(focusConstraints); }catch(e){}
-    }
+    // Try continuous autofocus
+    try {
+      await track.applyConstraints({ advanced:[{ focusMode:"continuous" }] });
+    } catch(e){}
 
-    // Tap anywhere on video to trigger single-shot focus
-    video.addEventListener("touchend", async (e) => {
-      const ring = document.getElementById("tapFocusRing");
+    // Tap to focus
+    video.ontouchend = async (e) => {
       const touch = e.changedTouches[0];
-      ring.style.left = touch.clientX + "px";
-      ring.style.top  = touch.clientY + "px";
+      const ring  = document.getElementById("tapFocusRing");
+      ring.style.left    = touch.clientX+"px";
+      ring.style.top     = touch.clientY+"px";
       ring.style.display = "block";
       ring.style.opacity = "1";
-      setTimeout(()=>{ ring.style.opacity="0"; setTimeout(()=>ring.style.display="none",300); }, 500);
-
+      setTimeout(()=>{ ring.style.opacity="0"; setTimeout(()=>ring.style.display="none",300); }, 700);
       try {
         const rect = video.getBoundingClientRect();
-        const x = (touch.clientX - rect.left) / rect.width;
-        const y = (touch.clientY - rect.top)  / rect.height;
-        await track.applyConstraints({ advanced:[{ focusMode:"single-shot", pointOfInterest:{x,y} }] });
-        setTimeout(async()=>{
-          try{ await track.applyConstraints({ advanced:[{ focusMode:"continuous" }] }); }catch(e){}
-        }, 1500);
+        const x = (touch.clientX-rect.left)/rect.width;
+        const y = (touch.clientY-rect.top)/rect.height;
+        await track.applyConstraints({ advanced:[{focusMode:"single-shot",pointOfInterest:{x,y}}] });
+        setTimeout(async()=>{ try{await track.applyConstraints({advanced:[{focusMode:"continuous"}]});}catch(e){} },1500);
       } catch(e){}
-    });
+    };
 
-    // Check if BarcodeDetector is supported
+    // Use BarcodeDetector (works on Redmi/OnePlus Chrome)
     if("BarcodeDetector" in window){
-      barcodeDetector = new BarcodeDetector({
-        formats:["qr_code","code_128","code_39","code_93","ean_13","ean_8","itf","upc_a","upc_e","data_matrix","aztec","pdf417","codabar"]
+      const detector = new BarcodeDetector({
+        formats:["code_128","code_39","code_93","ean_13","ean_8","upc_a","upc_e","qr_code","data_matrix","itf","codabar","aztec"]
       });
-      document.getElementById("scannerStatus").textContent = "✅ Scanner ready! Hold barcode inside box • Tap to focus";
-      scanLoop(video);
+      status.textContent = "✅ Ready! Hold barcode in box • Tap to focus";
+      const detect = async () => {
+        if(!scannerStream) return;
+        try {
+          const codes = await detector.detect(video);
+          if(codes.length > 0){ onBarcodeFound(codes[0].rawValue); return; }
+        } catch(e){}
+        scannerRAF = requestAnimationFrame(detect);
+      };
+      scannerRAF = requestAnimationFrame(detect);
     } else {
-      // Use jsQR fallback
-      document.getElementById("scannerStatus").textContent = "📷 Hold barcode inside green box • Tap to focus";
-      scanLoopJsQR(video);
-    }
-
-  } catch(err){
-    console.error(err);
-    // Try without exact facingMode constraint
-    try {
-      scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      const video = document.getElementById("scannerVideo");
-      video.srcObject = scannerStream;
-      await video.play();
-      if("BarcodeDetector" in window){
-        barcodeDetector = new BarcodeDetector({ formats:["qr_code","code_128","code_39","ean_13","ean_8","upc_a","upc_e"] });
-        scanLoop(video);
-      } else {
-        scanLoopJsQR(video);
-      }
-      document.getElementById("scannerStatus").textContent = "📷 Hold barcode inside green box";
-    } catch(e){
-      document.getElementById("scannerStatus").textContent = "❌ Camera error. Use manual entry below.";
-    }
-  }
-}
-
-function scanLoop(video){
-  const canvas = document.createElement("canvas");
-  async function detect(){
-    if(!scannerStream) return;
-    if(video.readyState === video.HAVE_ENOUGH_DATA){
-      try {
-        const barcodes = await barcodeDetector.detect(video);
-        if(barcodes.length > 0){
-          onBarcodeFound(barcodes[0].rawValue);
-          return;
+      // jsQR fallback
+      status.textContent = "📷 Hold barcode in green box • Tap to focus";
+      const canvas = document.createElement("canvas");
+      const ctx    = canvas.getContext("2d");
+      const detect = () => {
+        if(!scannerStream) return;
+        if(video.readyState === video.HAVE_ENOUGH_DATA){
+          canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+          ctx.drawImage(video,0,0);
+          const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+          if(typeof jsQR!=="undefined"){
+            const code = jsQR(img.data,img.width,img.height,{inversionAttempts:"dontInvert"});
+            if(code){ onBarcodeFound(code.data); return; }
+          }
         }
-      } catch(e){}
+        scannerRAF = requestAnimationFrame(detect);
+      };
+      scannerRAF = requestAnimationFrame(detect);
     }
-    scannerRAF = requestAnimationFrame(detect);
+  } catch(err){
+    status.textContent = "❌ Camera error — type barcode below";
+    document.getElementById("manualBarcode").focus();
   }
-  scannerRAF = requestAnimationFrame(detect);
-}
-
-function scanLoopJsQR(video){
-  const canvas = document.createElement("canvas");
-  const ctx    = canvas.getContext("2d");
-  function detect(){
-    if(!scannerStream) return;
-    if(video.readyState === video.HAVE_ENOUGH_DATA){
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-      const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-      if(typeof jsQR !== "undefined"){
-        const code = jsQR(img.data, img.width, img.height, { inversionAttempts:"dontInvert" });
-        if(code){ onBarcodeFound(code.data); return; }
-      }
-    }
-    scannerRAF = requestAnimationFrame(detect);
-  }
-  scannerRAF = requestAnimationFrame(detect);
 }
 
 function onBarcodeFound(val){
-  if(!val || !scannerTargetId) return;
+  if(!val||!scannerTargetId) return;
   document.getElementById(scannerTargetId).value = val;
   document.getElementById(scannerTargetId).classList.add("ok");
-  document.getElementById("scannerStatus").textContent = "✅ Scanned: " + val;
-  showToast("✅ Barcode: " + val, false);
-  setTimeout(closeScanner, 600);
+  showToast("✅ Scanned: "+val, false);
+  setTimeout(closeScanner, 500);
 }
 
 function closeScanner(){
   if(scannerRAF){ cancelAnimationFrame(scannerRAF); scannerRAF=null; }
   if(scannerStream){ scannerStream.getTracks().forEach(t=>t.stop()); scannerStream=null; }
+  const v=document.getElementById("scannerVideo");
+  if(v) v.srcObject=null;
   document.getElementById("scannerModal").classList.remove("active");
-  const v = document.getElementById("scannerVideo");
-  if(v) v.srcObject = null;
-  scannerTargetId = null;
+  scannerTargetId=null;
 }
 
 function saveManualBarcode(){
-  const val = document.getElementById("manualBarcode").value.trim();
-  if(val && scannerTargetId){
-    document.getElementById(scannerTargetId).value = val;
-    document.getElementById(scannerTargetId).classList.toggle("ok", val.length>0);
+  const val=document.getElementById("manualBarcode").value.trim();
+  if(val&&scannerTargetId){
+    document.getElementById(scannerTargetId).value=val;
+    document.getElementById(scannerTargetId).classList.toggle("ok",val.length>0);
     closeScanner();
-    showToast("✅ Barcode saved!", false);
+    showToast("✅ Barcode saved!",false);
   }
 }
 
-document.addEventListener("keydown", function(e){
+document.addEventListener("keydown",function(e){
   if(e.key==="Enter"){
     const mi=document.getElementById("manualBarcode");
-    if(mi && document.activeElement===mi) saveManualBarcode();
+    if(mi&&document.activeElement===mi) saveManualBarcode();
   }
 });
 
