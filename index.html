@@ -1314,72 +1314,91 @@ function openScanner(inputId, label){
 
 async function startScanner(){
   try {
-    // Request high-res rear camera
-    scannerStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { exact: "environment" },
-        width:  { ideal: 1920, min: 640 },
-        height: { ideal: 1080, min: 480 },
-        advanced: [
-          { focusMode: "continuous" },
-          { zoom: 1 }
-        ]
-      }
-    });
-
     const video = document.getElementById("scannerVideo");
+
+    // Try to get camera with best focus settings
+    const constraints = {
+      video: {
+        facingMode: { ideal: "environment" },
+        width:  { ideal: 1280 },
+        height: { ideal: 720 },
+      }
+    };
+
+    scannerStream = await navigator.mediaDevices.getUserMedia(constraints);
     video.srcObject = scannerStream;
     await video.play();
 
-    // Enable continuous autofocus
+    // Try to apply continuous autofocus
     const track = scannerStream.getVideoTracks()[0];
-    try {
-      const caps = track.getCapabilities();
-      if(caps.focusMode && caps.focusMode.includes("continuous")){
-        await track.applyConstraints({ advanced:[{ focusMode:"continuous" }] });
-      }
-    } catch(e){}
+    const caps  = track.getCapabilities ? track.getCapabilities() : {};
 
-    // Tap to focus
-    video.addEventListener("touchstart", async (e) => {
-      e.preventDefault();
-      const rect  = video.getBoundingClientRect();
-      const touch = e.touches[0];
-      const x = (touch.clientX - rect.left) / rect.width;
-      const y = (touch.clientY - rect.top)  / rect.height;
+    // Apply best focus settings available
+    const focusConstraints = { advanced: [] };
+    if(caps.focusMode){
+      if(caps.focusMode.includes("continuous"))
+        focusConstraints.advanced.push({ focusMode: "continuous" });
+    }
+    if(caps.focusDistance){
+      // Set macro focus distance for close-up barcode scanning
+      focusConstraints.advanced.push({ focusDistance: 0.1 });
+    }
+    if(focusConstraints.advanced.length > 0){
+      try{ await track.applyConstraints(focusConstraints); }catch(e){}
+    }
 
-      // Show focus ring
+    // Tap anywhere on video to trigger single-shot focus
+    video.addEventListener("touchend", async (e) => {
       const ring = document.getElementById("tapFocusRing");
-      ring.style.display = "block";
+      const touch = e.changedTouches[0];
       ring.style.left = touch.clientX + "px";
       ring.style.top  = touch.clientY + "px";
-      setTimeout(()=>{ ring.style.display="none"; }, 600);
+      ring.style.display = "block";
+      ring.style.opacity = "1";
+      setTimeout(()=>{ ring.style.opacity="0"; setTimeout(()=>ring.style.display="none",300); }, 500);
 
       try {
-        await track.applyConstraints({ advanced:[{ focusMode:"single-shot", pointOfInterest:{ x, y } }] });
+        const rect = video.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) / rect.width;
+        const y = (touch.clientY - rect.top)  / rect.height;
+        await track.applyConstraints({ advanced:[{ focusMode:"single-shot", pointOfInterest:{x,y} }] });
         setTimeout(async()=>{
           try{ await track.applyConstraints({ advanced:[{ focusMode:"continuous" }] }); }catch(e){}
-        }, 1000);
+        }, 1500);
       } catch(e){}
-    }, { passive:false });
+    });
 
-    document.getElementById("scannerStatus").textContent = "📷 Tap screen to focus • Hold barcode steady";
-
-    // Use BarcodeDetector if available (Chrome Android 83+)
+    // Check if BarcodeDetector is supported
     if("BarcodeDetector" in window){
       barcodeDetector = new BarcodeDetector({
-        formats: ["qr_code","code_128","code_39","ean_13","ean_8","itf","upc_a","upc_e","data_matrix","aztec","pdf417"]
+        formats:["qr_code","code_128","code_39","code_93","ean_13","ean_8","itf","upc_a","upc_e","data_matrix","aztec","pdf417","codabar"]
       });
-      document.getElementById("scannerStatus").textContent = "✅ Native scanner ready • Tap to focus • Hold steady";
+      document.getElementById("scannerStatus").textContent = "✅ Scanner ready! Hold barcode inside box • Tap to focus";
       scanLoop(video);
     } else {
-      // Fallback: jsQR
-      document.getElementById("scannerStatus").textContent = "📷 Tap to focus • Hold barcode inside box";
+      // Use jsQR fallback
+      document.getElementById("scannerStatus").textContent = "📷 Hold barcode inside green box • Tap to focus";
       scanLoopJsQR(video);
     }
 
   } catch(err){
-    document.getElementById("scannerStatus").textContent = "❌ " + err.message;
+    console.error(err);
+    // Try without exact facingMode constraint
+    try {
+      scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const video = document.getElementById("scannerVideo");
+      video.srcObject = scannerStream;
+      await video.play();
+      if("BarcodeDetector" in window){
+        barcodeDetector = new BarcodeDetector({ formats:["qr_code","code_128","code_39","ean_13","ean_8","upc_a","upc_e"] });
+        scanLoop(video);
+      } else {
+        scanLoopJsQR(video);
+      }
+      document.getElementById("scannerStatus").textContent = "📷 Hold barcode inside green box";
+    } catch(e){
+      document.getElementById("scannerStatus").textContent = "❌ Camera error. Use manual entry below.";
+    }
   }
 }
 
