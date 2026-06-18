@@ -1561,9 +1561,9 @@ function renderCustomersList(){
   var container = document.getElementById("customersList");
   container.innerHTML = "";
   Object.keys(allCust).forEach(function(cname){
-    var cdata   = allCust[cname];
-    var builtIn = CUSTOMER_DATA[cname] ? true : false;
-    var partCount   = cdata.parts.length;
+    var cdata    = allCust[cname];
+    var builtIn  = CUSTOMER_DATA[cname] ? true : false;
+    var partCount = cdata.parts.length;
     var partPreview = cdata.parts.slice(0,3).map(function(p){ return p.split(" - ")[0].trim(); }).join(", ") + (partCount>3?"...":"");
     var wrapper = document.createElement("div");
     wrapper.style.cssText = "background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden;";
@@ -1572,22 +1572,25 @@ function renderCustomersList(){
     var title = document.createElement("b");
     title.textContent = cname;
     header.appendChild(title);
+    var btnGroup = document.createElement("div");
+    btnGroup.style.cssText = "display:flex;gap:4px;";
+    var editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.style.cssText = "background:#dbeafe;border:none;color:#1e40af;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
+    (function(n){ editBtn.onclick = function(){ openEditCust(n); }; })(cname);
+    btnGroup.appendChild(editBtn);
     if(!builtIn){
       var delBtn = document.createElement("button");
       delBtn.textContent = "Delete";
       delBtn.style.cssText = "background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
       (function(n){ delBtn.onclick = function(){ deleteCustomer(n); }; })(cname);
-      header.appendChild(delBtn);
+      btnGroup.appendChild(delBtn);
     }
+    header.appendChild(btnGroup);
     wrapper.appendChild(header);
     var body = document.createElement("div");
     body.style.cssText = "padding:8px 10px;font-size:11px;color:#555;";
     body.innerHTML = "<b>Parts (" + partCount + "):</b> " + partPreview;
-    var addBtn = document.createElement("button");
-    addBtn.textContent = "+ Add Part";
-    addBtn.style.cssText = "background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:8px;";
-    (function(n){ addBtn.onclick = function(){ manageParts(n); }; })(cname);
-    body.appendChild(addBtn);
     wrapper.appendChild(body);
     container.appendChild(wrapper);
   });
