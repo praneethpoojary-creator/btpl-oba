@@ -397,6 +397,65 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
   </div>
 </div>
 
+<!-- EDIT USER MODAL -->
+<div id="editUserModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;display:none;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;width:92%;max-width:400px;overflow:hidden;">
+    <div style="background:#1a3a6b;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-weight:700;">✏️ Edit User</span>
+      <button onclick="closeEditUser()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px;">
+      <input type="hidden" id="editUserKey">
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Display Name</label>
+        <input type="text" id="editUserDisplay" style="width:100%;border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Username (login)</label>
+        <input type="text" id="editUserUsername" style="width:100%;border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Password</label>
+        <input type="password" id="editUserPassword" placeholder="Leave blank to keep same" style="width:100%;border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Role</label>
+        <select id="editUserRole" style="width:100%;border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button onclick="saveEditUser()" style="width:100%;background:#16a34a;color:#fff;border:none;padding:10px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">✔ Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CUSTOMER MODAL -->
+<div id="editCustModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 0;">
+  <div style="background:#fff;border-radius:12px;width:92%;max-width:480px;overflow:hidden;margin:auto;">
+    <div style="background:#1a3a6b;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-weight:700;">✏️ Edit Customer: <span id="editCustTitle"></span></span>
+      <button onclick="closeEditCust()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px;">
+      <input type="hidden" id="editCustKey">
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:4px;">Customer Name</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="editCustName" style="flex:1;border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:13px;outline:none;">
+          <button onclick="saveEditCustName()" style="background:#1a3a6b;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:12px;cursor:pointer;">Save</button>
+        </div>
+      </div>
+      <div style="margin-bottom:8px;font-size:12px;font-weight:700;color:#555;">Part Numbers</div>
+      <div id="editPartsList" style="max-height:250px;overflow-y:auto;margin-bottom:10px;border:1px solid #e2e8f0;border-radius:6px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="newPartInput" placeholder="Add part: PART-001 - Description" style="flex:1;border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:12px;outline:none;">
+        <button onclick="addPartFromModal()" style="background:#16a34a;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">+ Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Barcode Scanner Modal -->
 <div class="scanner-overlay" id="scannerModal">
   <div style="background:#000;border-radius:14px;overflow:hidden;width:95%;max-width:420px;">
@@ -1439,21 +1498,35 @@ function renderUsersList(){
 }
 
 function editUser(uname, udata){
-  var newDisplay  = prompt("Display Name:", udata.display||uname);
-  if(newDisplay === null) return;
-  var newPassword = prompt("New Password (leave blank to keep same):", "");
-  if(newPassword === null) return;
-  var newRole = prompt("Role (admin/user):", udata.role);
-  if(newRole === null) return;
-  if(newRole !== "admin" && newRole !== "user"){ alert("Role must be 'admin' or 'user'"); return; }
-  
-  var extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
-  // If built-in user, add to extra to override
-  if(!extra[uname]) extra[uname] = {};
-  extra[uname].display  = newDisplay || uname;
-  extra[uname].role     = newRole;
-  extra[uname].password = newPassword || udata.password;
+  document.getElementById("editUserKey").value      = uname;
+  document.getElementById("editUserDisplay").value  = udata.display || uname;
+  document.getElementById("editUserUsername").value = uname;
+  document.getElementById("editUserPassword").value = "";
+  document.getElementById("editUserRole").value     = udata.role || "user";
+  document.getElementById("editUserModal").style.display = "flex";
+}
+function closeEditUser(){
+  document.getElementById("editUserModal").style.display = "none";
+}
+function saveEditUser(){
+  var oldKey   = document.getElementById("editUserKey").value;
+  var display  = document.getElementById("editUserDisplay").value.trim();
+  var username = document.getElementById("editUserUsername").value.trim().toLowerCase();
+  var password = document.getElementById("editUserPassword").value.trim();
+  var role     = document.getElementById("editUserRole").value;
+  if(!display||!username){ showToast("Name and username required!",true); return; }
+  var extra    = JSON.parse(localStorage.getItem("btpl_users")||"{}");
+  var allUsers = getCombinedUsers();
+  var oldData  = allUsers[oldKey] || {};
+  // If username changed, remove old key
+  if(username !== oldKey && !USERS[oldKey]) delete extra[oldKey];
+  extra[username] = {
+    display:  display,
+    role:     role,
+    password: password || oldData.password || ""
+  };
   localStorage.setItem("btpl_users", JSON.stringify(extra));
+  closeEditUser();
   showToast("User updated!", false);
   renderUsersList();
 }
