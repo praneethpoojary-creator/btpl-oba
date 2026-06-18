@@ -201,12 +201,12 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
     </div>
     <div style="margin-bottom:14px;">
       <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:5px;">Username</label>
-      <input type="text" id="loginUser" placeholder="Enter username"
+      <input type="text" id="loginUser" placeholder="Enter username" name="username" autocomplete="username"
         style="width:100%;border:1.5px solid #ddd;border-radius:8px;padding:10px 12px;font-size:14px;outline:none;">
     </div>
     <div style="margin-bottom:20px;">
       <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:5px;">Password</label>
-      <input type="password" id="loginPass" placeholder="Enter password"
+      <input type="password" id="loginPass" placeholder="Enter password" name="password" autocomplete="current-password"
         style="width:100%;border:1.5px solid #ddd;border-radius:8px;padding:10px 12px;font-size:14px;outline:none;">
     </div>
     <div id="loginError" style="color:#dc2626;font-size:12px;margin-bottom:10px;display:none;text-align:center;">
@@ -226,6 +226,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
   <div style="display:flex;gap:10px;align-items:center;">
     <a id="driveFolderBtn" href="https://drive.google.com/drive/folders/1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd" target="_blank"
       style="color:#7dd3fc;font-size:11px;text-decoration:none;">📂 Drive Folder</a>
+    <button id="adminPanelBtn" onclick="openAdminPanel()" style="display:none;background:#f59e0b;border:none;color:#000;padding:2px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-weight:700;">⚙ Admin</button>
     <button onclick="doLogout()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Logout</button>
   </div>
 </div>
@@ -345,6 +346,56 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- ADMIN PANEL -->
+<div id="adminPanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:8000;overflow-y:auto;">
+  <div style="background:#fff;border-radius:12px;margin:20px auto;max-width:600px;width:95%;overflow:hidden;">
+    <div style="background:#1a3a6b;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;font-weight:700;">⚙ Admin Panel</span>
+      <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;">✕ Close</button>
+    </div>
+    
+    <!-- Tabs -->
+    <div style="display:flex;border-bottom:2px solid #e2e8f0;">
+      <button onclick="adminTab('users')" id="tabUsers" style="flex:1;padding:10px;border:none;background:#e8f0fe;color:#1a3a6b;font-weight:700;cursor:pointer;font-size:13px;">👥 Users</button>
+      <button onclick="adminTab('customers')" id="tabCustomers" style="flex:1;padding:10px;border:none;background:#fff;color:#555;cursor:pointer;font-size:13px;">🏢 Customers</button>
+    </div>
+
+    <!-- Users Tab -->
+    <div id="adminUsers" style="padding:16px;">
+      <div style="font-size:13px;font-weight:700;color:#1a3a6b;margin-bottom:10px;">Manage Users</div>
+      <div id="usersList" style="margin-bottom:14px;"></div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+        <div style="font-size:12px;font-weight:700;color:#1a3a6b;margin-bottom:8px;">➕ Add New User</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input type="text" id="newUserName" placeholder="Display Name" style="flex:1;min-width:100px;border:1px solid #ddd;border-radius:6px;padding:7px 10px;font-size:13px;">
+          <input type="text" id="newUserUsername" placeholder="Username (login)" style="flex:1;min-width:100px;border:1px solid #ddd;border-radius:6px;padding:7px 10px;font-size:13px;">
+          <input type="password" id="newUserPass" placeholder="Password" style="flex:1;min-width:100px;border:1px solid #ddd;border-radius:6px;padding:7px 10px;font-size:13px;">
+          <select id="newUserRole" style="border:1px solid #ddd;border-radius:6px;padding:7px 10px;font-size:13px;">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button onclick="addNewUser()" style="background:#16a34a;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customers Tab -->
+    <div id="adminCustomers" style="padding:16px;display:none;">
+      <div style="font-size:13px;font-weight:700;color:#1a3a6b;margin-bottom:10px;">Manage Customers & Parts</div>
+      <div id="customersList" style="margin-bottom:14px;"></div>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+        <div style="font-size:12px;font-weight:700;color:#1a3a6b;margin-bottom:8px;">➕ Add New Customer</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <input type="text" id="newCustName" placeholder="Customer Name" style="flex:1;border:1px solid #ddd;border-radius:6px;padding:7px 10px;font-size:13px;">
+          <button onclick="addNewCustomer()" style="background:#16a34a;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Add</button>
+        </div>
+        <div style="font-size:11px;color:#888;">After adding customer, click on it to add Part Numbers</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- Barcode Scanner Modal -->
 <div class="scanner-overlay" id="scannerModal">
   <div style="background:#000;border-radius:14px;overflow:hidden;width:95%;max-width:420px;">
@@ -459,38 +510,18 @@ function doLogin(){
   const username = document.getElementById("loginUser").value.trim().toLowerCase();
   const password = document.getElementById("loginPass").value;
   const errDiv   = document.getElementById("loginError");
+  const allUsers = getCombinedUsers();
 
-  if(USERS[username] && USERS[username].password === password){
+  if(allUsers[username] && allUsers[username].password === password){
     CURRENT_USER = username;
-    CURRENT_ROLE = USERS[username].role;
+    CURRENT_ROLE = allUsers[username].role;
+    // Save session to localStorage
+    localStorage.setItem("btpl_session", JSON.stringify({user:username, role:CURRENT_ROLE, time:Date.now()}));
     
     // Hide login, show app
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("mainApp").style.display = "block";
-    
-    // Show user bar
-    const userBar = document.getElementById("userBar");
-    userBar.style.display = "flex";
-    document.getElementById("userBarName").innerHTML = 
-      "👤 " + USERS[username].display + 
-      " &nbsp;|&nbsp; Role: <b>" + (CURRENT_ROLE==="admin"?"Admin":"User") + "</b>";
-
-    // Admin gets edit link, User gets view-only link
-    const driveBtn = document.getElementById("driveFolderBtn");
-    if(CURRENT_ROLE === "admin"){
-      driveBtn.textContent = "📂 Drive Folder (Edit)";
-      driveBtn.style.color = "#86efac";
-    } else {
-      driveBtn.textContent = "📂 Drive Folder (View)";
-      driveBtn.href = "https://drive.google.com/drive/folders/1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd?usp=sharing";
-    }
-
     errDiv.style.display = "none";
-    
-    // Initialize app
-    document.getElementById("date").value = new Date().toISOString().slice(0,10);
-    loadDriveLog();
-    buildTable(5);
+    localStorage.setItem("btpl_session", JSON.stringify({user:username, role:CURRENT_ROLE, time:Date.now()}));
+    showApp(username, CURRENT_ROLE);
 
   } else {
     errDiv.style.display = "block";
@@ -501,11 +532,60 @@ function doLogin(){
 function doLogout(){
   CURRENT_USER = null;
   CURRENT_ROLE = null;
+  localStorage.removeItem("btpl_session");
   document.getElementById("loginScreen").style.display = "flex";
   document.getElementById("mainApp").style.display = "none";
   document.getElementById("userBar").style.display = "none";
   document.getElementById("loginUser").value = "";
   document.getElementById("loginPass").value = "";
+}
+
+function getCombinedUsers(){
+  try {
+    const extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
+    return Object.assign({}, USERS, extra);
+  } catch(e){ return USERS; }
+}
+
+function autoLogin(){
+  try {
+    const session = JSON.parse(localStorage.getItem("btpl_session")||"null");
+    if(!session) return false;
+    // Session valid for 8 hours
+    if(Date.now() - session.time > 8*60*60*1000){
+      localStorage.removeItem("btpl_session"); return false;
+    }
+    const allUsers = getCombinedUsers();
+    if(!allUsers[session.user]) return false;
+    CURRENT_USER = session.user;
+    CURRENT_ROLE = session.role;
+    showApp(CURRENT_USER, CURRENT_ROLE);
+    return true;
+  } catch(e){ return false; }
+}
+
+function showApp(username, role){
+  const allUsers = getCombinedUsers();
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("mainApp").style.display = "block";
+  const userBar = document.getElementById("userBar");
+  userBar.style.display = "flex";
+  document.getElementById("userBarName").innerHTML =
+    "👤 " + (allUsers[username]?.display || username) +
+    " &nbsp;|&nbsp; Role: <b>" + (role==="admin"?"Admin":"User") + "</b>";
+  const driveBtn = document.getElementById("driveFolderBtn");
+  if(role === "admin"){
+    driveBtn.textContent = "📂 Drive (Edit)";
+    driveBtn.style.color = "#86efac";
+    // Show admin panel button
+    const ab = document.getElementById("adminPanelBtn");
+    if(ab) ab.style.display="inline-block";
+  } else {
+    driveBtn.textContent = "📂 Drive (View)";
+  }
+  document.getElementById("date").value = new Date().toISOString().slice(0,10);
+  loadDriveLog();
+  buildTable(5);
 }
 
 // Allow Enter key to login
@@ -656,6 +736,30 @@ const CUSTOMER_DATA = {
   "Havells":     { models:["ATOM 1.0 IPCB UV LAMP STORAGE","Diosa","Diosa Plus","Fab Plus","Other"], parts:["HVLS-001","HVLS-002","HVLS-003","HVLS-004","Other"] }
 };
 
+function resetCustomer(){
+  const sel = document.getElementById("customerSelect");
+  const inp = document.getElementById("customerInput");
+  const rb  = document.getElementById("custResetBtn");
+  sel.value=""; sel.style.display="block";
+  inp.style.display="none"; inp.value="";
+  if(rb) rb.style.display="none";
+  // Reset part and model
+  const pSel=document.getElementById("partSelect");
+  const pInp=document.getElementById("partNo");
+  const mInp=document.getElementById("modelName");
+  if(pSel){pSel.innerHTML='<option value="">-- Select Customer First --</option>';pSel.style.display="none";}
+  if(pInp){pInp.value="";pInp.style.display="block";}
+  if(mInp){mInp.value="";mInp.placeholder="Select customer first";}
+}
+
+function getCombinedCustomerData(){
+  // Get admin-added customers from localStorage
+  try {
+    const extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+    return Object.assign({}, CUSTOMER_DATA, extra);
+  } catch(e){ return CUSTOMER_DATA; }
+}
+
 function onCustomerChange(){
   const sel  = document.getElementById("customerSelect");
   const inp  = document.getElementById("customer");
@@ -667,13 +771,19 @@ function onCustomerChange(){
     sel.style.display="none"; inp.style.display="block";
     inp.readOnly=false; inp.style.background=""; inp.style.color="";
     inp.value=""; inp.focus();
+    // Show reset button
+    const rb = document.getElementById("custResetBtn");
+    if(rb) rb.style.display="inline-block";
     pSel.style.display="none"; pInp.style.display="block";
     pInp.readOnly=false; pInp.style.background=""; pInp.style.color="";
     pInp.placeholder="Enter part number"; pInp.value="";
-    mInp.value=""; mInp.style.background=""; mInp.readOnly=false;
-    mInp.placeholder="Enter model name";
+    mInp.value=""; mInp.style.background=""; mInp.style.color="";
+    mInp.readOnly=false; mInp.placeholder="Enter model name";
     return;
   }
+  // Hide reset button for normal selection
+  const rb2 = document.getElementById("custResetBtn");
+  if(rb2) rb2.style.display="none";
 
   const chosen = sel.value;
   inp.value = chosen;
@@ -1235,6 +1345,143 @@ async function uploadToDrive({doc, filename}){
   }
 }
 
+
+// ── ADMIN PANEL ──────────────────────────────────────────────
+function openAdminPanel(){
+  document.getElementById("adminPanel").style.display="block";
+  adminTab("users");
+}
+function closeAdminPanel(){
+  document.getElementById("adminPanel").style.display="none";
+}
+function adminTab(tab){
+  document.getElementById("adminUsers").style.display    = tab==="users"?"block":"none";
+  document.getElementById("adminCustomers").style.display= tab==="customers"?"block":"none";
+  document.getElementById("tabUsers").style.background   = tab==="users"?"#e8f0fe":"#fff";
+  document.getElementById("tabUsers").style.color        = tab==="users"?"#1a3a6b":"#555";
+  document.getElementById("tabCustomers").style.background= tab==="customers"?"#e8f0fe":"#fff";
+  document.getElementById("tabCustomers").style.color    = tab==="customers"?"#1a3a6b":"#555";
+  if(tab==="users") renderUsersList();
+  if(tab==="customers") renderCustomersList();
+}
+
+function renderUsersList(){
+  const allUsers = getCombinedUsers();
+  const extra    = JSON.parse(localStorage.getItem("btpl_users")||"{}");
+  let html = "";
+  Object.entries(allUsers).forEach(([uname, udata])=>{
+    const isBuiltIn = USERS[uname] ? true : false;
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;font-size:12px;">
+      <div>
+        <b>${udata.display||uname}</b> 
+        <span style="color:#888;margin-left:6px;">@${uname}</span>
+        <span style="background:${udata.role==="admin"?"#fef9c3":"#dcfce7"};color:${udata.role==="admin"?"#92400e":"#166534"};padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;margin-left:6px;">${udata.role}</span>
+        ${isBuiltIn?"<span style='color:#aaa;font-size:10px;margin-left:4px;'>(built-in)</span>":""}
+      </div>
+      ${!isBuiltIn?`<button onclick="deleteUser('${uname}')" style="background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>`:""}
+    </div>`;
+  });
+  document.getElementById("usersList").innerHTML = html;
+}
+
+function addNewUser(){
+  const name     = document.getElementById("newUserName").value.trim();
+  const username = document.getElementById("newUserUsername").value.trim().toLowerCase();
+  const password = document.getElementById("newUserPass").value.trim();
+  const role     = document.getElementById("newUserRole").value;
+  if(!name||!username||!password){ showToast("⚠ Fill all fields!",true); return; }
+  const extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
+  extra[username] = { display:name, password, role };
+  localStorage.setItem("btpl_users", JSON.stringify(extra));
+  document.getElementById("newUserName").value="";
+  document.getElementById("newUserUsername").value="";
+  document.getElementById("newUserPass").value="";
+  showToast("✅ User "+name+" added!",false);
+  renderUsersList();
+  // Update customer dropdown
+  refreshCustomerDropdown();
+}
+
+function deleteUser(username){
+  if(!confirm("Delete user '"+username+"'?")) return;
+  const extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
+  delete extra[username];
+  localStorage.setItem("btpl_users", JSON.stringify(extra));
+  showToast("✅ User deleted",false);
+  renderUsersList();
+}
+
+function renderCustomersList(){
+  const allCust = getCombinedCustomerData();
+  const extra   = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  let html = "";
+  Object.entries(allCust).forEach(([cname, cdata])=>{
+    const isBuiltIn = CUSTOMER_DATA[cname]?true:false;
+    html += `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0;">
+        <b style="font-size:13px;">${cname}</b>
+        <div style="display:flex;gap:6px;">
+          ${!isBuiltIn?`<button onclick="deleteCustomer('${cname}')" style="background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>`:""}
+        </div>
+      </div>
+      <div style="padding:8px 10px;font-size:11px;color:#555;">
+        <b>Parts (${cdata.parts.length}):</b> ${cdata.parts.slice(0,3).map(p=>p.split(" — ")[0]).join(", ")}${cdata.parts.length>3?"...":""}
+        <button onclick="manageParts('${cname}')" style="background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;margin-left:8px;">+ Add Part</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById("customersList").innerHTML = html;
+}
+
+function addNewCustomer(){
+  const name = document.getElementById("newCustName").value.trim();
+  if(!name){ showToast("⚠ Enter customer name!",true); return; }
+  const extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  if(!extra[name]) extra[name] = { models:["Other"], parts:["Other"] };
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  document.getElementById("newCustName").value="";
+  showToast("✅ Customer "+name+" added!",false);
+  renderCustomersList();
+  refreshCustomerDropdown();
+}
+
+function deleteCustomer(name){
+  if(!confirm("Delete customer '"+name+"'?")) return;
+  const extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  delete extra[name];
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  showToast("✅ Customer deleted",false);
+  renderCustomersList();
+  refreshCustomerDropdown();
+}
+
+function manageParts(custName){
+  const partNo = prompt("Enter Part Number for "+custName+":
+(Format: PART-001 — Description)");
+  if(!partNo) return;
+  const extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  const allCust = getCombinedCustomerData();
+  if(!extra[custName]) extra[custName] = { models: allCust[custName]?.models||["Other"], parts:[...allCust[custName]?.parts||[]] };
+  if(!extra[custName].parts.includes(partNo)) extra[custName].parts.unshift(partNo);
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  showToast("✅ Part added!",false);
+  renderCustomersList();
+}
+
+function refreshCustomerDropdown(){
+  const sel  = document.getElementById("customerSelect");
+  const curr = sel.value;
+  const allCust = getCombinedCustomerData();
+  // Keep existing options, add new ones
+  const existing = [...sel.options].map(o=>o.value);
+  Object.keys(allCust).forEach(name=>{
+    if(!existing.includes(name)){
+      const o=document.createElement("option");
+      o.value=name; o.textContent=name;
+      sel.insertBefore(o, sel.querySelector('option[value="__other__"]'));
+    }
+  });
+}
 
 function loadDriveLog(){
   try {
