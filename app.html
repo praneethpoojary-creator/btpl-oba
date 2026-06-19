@@ -12195,7 +12195,7 @@ async function doSubmit(){
   }
 
   if(!confirm("Submit OBA checklist to Google Drive?")) return;
-  const result = buildPDFDoc();
+  var result = buildPDFDoc();
   window._pendingPDF = result;
   uploadToDrive(result);
 }
