@@ -11110,6 +11110,284 @@ function autoLogin(){
   }
 }
 
+function openAdminPanel(){
+  document.getElementById("adminPanel").style.display="block";
+  adminTab("users");
+}
+function closeAdminPanel(){
+  document.getElementById("adminPanel").style.display="none";
+}
+function adminTab(tab){
+  document.getElementById("adminUsers").style.display     = tab==="users"?"block":"none";
+  document.getElementById("adminCustomers").style.display = tab==="customers"?"block":"none";
+  document.getElementById("tabUsers").style.background    = tab==="users"?"#e8f0fe":"#fff";
+  document.getElementById("tabUsers").style.color         = tab==="users"?"#1a3a6b":"#555";
+  document.getElementById("tabCustomers").style.background= tab==="customers"?"#e8f0fe":"#fff";
+  document.getElementById("tabCustomers").style.color     = tab==="customers"?"#1a3a6b":"#555";
+  if(tab==="users") renderUsersList();
+  if(tab==="customers") renderCustomersList();
+}
+
+function renderUsersList(){
+  var allUsers  = getCombinedUsers();
+  var container = document.getElementById("usersList");
+  container.innerHTML = "";
+  Object.keys(allUsers).forEach(function(uname){
+    var udata   = allUsers[uname];
+    var builtIn = USERS[uname] ? true : false;
+    var div = document.createElement("div");
+    div.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;font-size:12px;";
+    var info = document.createElement("div");
+    info.innerHTML = "<b>" + (udata.display||uname) + "</b>"
+      + " <span style='color:#888;'>@" + uname + "</span>"
+      + " <span style='background:" + (udata.role==="admin"?"#fef9c3":"#dcfce7") + ";color:" + (udata.role==="admin"?"#92400e":"#166534") + ";padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;'>" + udata.role + "</span>"
+      + (builtIn?" <span style='color:#aaa;font-size:10px;'>(built-in)</span>":"");
+    div.appendChild(info);
+    var btnDiv = document.createElement("div");
+    btnDiv.style.cssText = "display:flex;gap:4px;";
+    var editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.style.cssText = "background:#dbeafe;border:none;color:#1e40af;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
+    (function(u,d){ editBtn.onclick = function(){ editUser(u,d); }; })(uname, udata);
+    btnDiv.appendChild(editBtn);
+    if(!builtIn){
+      var delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.style.cssText = "background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
+      (function(u){ delBtn.onclick = function(){ deleteUser(u); }; })(uname);
+      btnDiv.appendChild(delBtn);
+    }
+    div.appendChild(btnDiv);
+    container.appendChild(div);
+  });
+}
+
+function editUser(uname, udata){
+  document.getElementById("editUserKey").value      = uname;
+  document.getElementById("editUserDisplay").value  = udata.display || uname;
+  document.getElementById("editUserUsername").value = uname;
+  document.getElementById("editUserPassword").value = "";
+  document.getElementById("editUserRole").value     = udata.role || "user";
+  document.getElementById("editUserModal").style.display = "flex";
+}
+function closeEditUser(){
+  document.getElementById("editUserModal").style.display = "none";
+}
+function saveEditUser(){
+  var oldKey   = document.getElementById("editUserKey").value;
+  var display  = document.getElementById("editUserDisplay").value.trim();
+  var username = document.getElementById("editUserUsername").value.trim().toLowerCase();
+  var password = document.getElementById("editUserPassword").value.trim();
+  var role     = document.getElementById("editUserRole").value;
+  if(!display||!username){ showToast("Name and username required!",true); return; }
+  var extra    = JSON.parse(localStorage.getItem("btpl_users")||"{}");
+  var allUsers = getCombinedUsers();
+  var oldData  = allUsers[oldKey] || {};
+  if(username !== oldKey && !USERS[oldKey]) delete extra[oldKey];
+  extra[username] = { display:display, role:role, password:password || oldData.password || "" };
+  localStorage.setItem("btpl_users", JSON.stringify(extra));
+  closeEditUser();
+  showToast("User updated!", false);
+  renderUsersList();
+}
+function addNewUser(){
+  var name     = document.getElementById("newUserName").value.trim();
+  var username = document.getElementById("newUserUsername").value.trim().toLowerCase();
+  var password = document.getElementById("newUserPass").value.trim();
+  var role     = document.getElementById("newUserRole").value;
+  if(!name||!username||!password){ showToast("Fill all fields!",true); return; }
+  var extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
+  extra[username] = { display:name, password:password, role:role };
+  localStorage.setItem("btpl_users", JSON.stringify(extra));
+  document.getElementById("newUserName").value="";
+  document.getElementById("newUserUsername").value="";
+  document.getElementById("newUserPass").value="";
+  showToast("User " + name + " added!", false);
+  renderUsersList();
+}
+function deleteUser(username){
+  if(!confirm("Delete user " + username + "?")) return;
+  var extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
+  delete extra[username];
+  localStorage.setItem("btpl_users", JSON.stringify(extra));
+  showToast("User deleted", false);
+  renderUsersList();
+}
+
+function renderCustomersList(){
+  var allCust   = getCombinedCustomerData();
+  var container = document.getElementById("customersList");
+  container.innerHTML = "";
+  Object.keys(allCust).forEach(function(cname){
+    var cdata    = allCust[cname];
+    var builtIn  = CUSTOMER_DATA[cname] ? true : false;
+    var partCount = cdata.parts.length;
+    var partPreview = cdata.parts.slice(0,3).map(function(p){ return p.split(" - ")[0].trim(); }).join(", ") + (partCount>3?"...":"");
+    var wrapper = document.createElement("div");
+    wrapper.style.cssText = "background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:8px;overflow:hidden;";
+    var header = document.createElement("div");
+    header.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #e2e8f0;";
+    var title = document.createElement("b");
+    title.textContent = cname;
+    header.appendChild(title);
+    var btnGroup = document.createElement("div");
+    btnGroup.style.cssText = "display:flex;gap:4px;";
+    var editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.style.cssText = "background:#dbeafe;border:none;color:#1e40af;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
+    (function(n){ editBtn.onclick = function(){ openEditCust(n); }; })(cname);
+    btnGroup.appendChild(editBtn);
+    if(!builtIn){
+      var delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.style.cssText = "background:#fee2e2;border:none;color:#dc2626;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;";
+      (function(n){ delBtn.onclick = function(){ deleteCustomer(n); }; })(cname);
+      btnGroup.appendChild(delBtn);
+    }
+    header.appendChild(btnGroup);
+    wrapper.appendChild(header);
+    var body = document.createElement("div");
+    body.style.cssText = "padding:8px 10px;font-size:11px;color:#555;";
+    body.innerHTML = "<b>Parts (" + partCount + "):</b> " + partPreview;
+    wrapper.appendChild(body);
+    container.appendChild(wrapper);
+  });
+}
+function addNewCustomer(){
+  var name = document.getElementById("newCustName").value.trim();
+  if(!name){ showToast("Enter customer name!", true); return; }
+  var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  if(!extra[name]) extra[name] = { models:["Other"], parts:["Other"] };
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  document.getElementById("newCustName").value="";
+  showToast("Customer " + name + " added!", false);
+  renderCustomersList();
+  rebuildCustomerDropdown();
+}
+function deleteCustomer(name){
+  if(!confirm("Delete customer " + name + "?")) return;
+  var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  delete extra[name];
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  showToast("Customer deleted", false);
+  renderCustomersList();
+  rebuildCustomerDropdown();
+}
+function openEditCust(cname){
+  var parts = getEditableParts(cname);
+  document.getElementById("editCustKey").value = cname;
+  document.getElementById("editCustTitle").textContent = cname;
+  document.getElementById("editCustName").value = cname;
+  document.getElementById("newPartInput").value = "";
+  document.getElementById("editCustModal").style.display = "flex";
+  renderEditPartsList(cname, parts);
+}
+function closeEditCust(){
+  document.getElementById("editCustModal").style.display = "none";
+  renderCustomersList();
+  rebuildCustomerDropdown();
+}
+function saveEditCustName(){
+  var oldName = document.getElementById("editCustKey").value;
+  var newName = document.getElementById("editCustName").value.trim();
+  if(!newName){ showToast("Enter customer name!",true); return; }
+  if(newName === oldName){ showToast("Name unchanged",false); return; }
+  var extra   = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  var allCust = getCombinedCustomerData();
+  var data    = allCust[oldName] || { models:["Other"], parts:[] };
+  extra[newName] = { models: data.models.slice(), parts: data.parts.slice() };
+  if(extra[oldName]) delete extra[oldName];
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  document.getElementById("editCustKey").value = newName;
+  document.getElementById("editCustTitle").textContent = newName;
+  showToast("Customer renamed!", false);
+}
+function getEditableParts(cname){
+  var extra   = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  var allCust = getCombinedCustomerData();
+  var base    = allCust[cname] || { models:["Other"], parts:[] };
+  if(!extra[cname]){
+    extra[cname] = { models: base.models.slice(), parts: base.parts.slice() };
+    localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  }
+  return extra[cname].parts;
+}
+function renderEditPartsList(cname, parts){
+  var container = document.getElementById("editPartsList");
+  container.innerHTML = "";
+  if(!parts || parts.length === 0){
+    container.innerHTML = "<div style='padding:10px;color:#aaa;font-size:12px;text-align:center;'>No parts added yet</div>";
+    return;
+  }
+  parts.forEach(function(part, idx){
+    var row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;padding:6px 10px;border-bottom:1px solid #f0f0f0;font-size:12px;gap:6px;";
+    var nameEl = document.createElement("span");
+    nameEl.textContent = part;
+    nameEl.style.cssText = "flex:1;";
+    row.appendChild(nameEl);
+    var editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.style.cssText = "background:#dbeafe;border:none;color:#1e40af;padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer;";
+    (function(i,p){ editBtn.onclick = function(){ editPart(cname,i,p); }; })(idx,part);
+    row.appendChild(editBtn);
+    var delBtn = document.createElement("button");
+    delBtn.textContent = "Del";
+    delBtn.style.cssText = "background:#fee2e2;border:none;color:#dc2626;padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer;";
+    (function(i){ delBtn.onclick = function(){ deletePart(cname,i); }; })(idx);
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}
+function editPart(cname, idx, oldPart){
+  var newPart = prompt("Edit part:", oldPart);
+  if(newPart === null) return;
+  if(!newPart.trim()){ alert("Part cannot be empty!"); return; }
+  getEditableParts(cname);
+  var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  extra[cname].parts[idx] = newPart.trim();
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  showToast("Part updated!", false);
+  openEditCust(cname);
+}
+function deletePart(cname, idx){
+  if(!confirm("Delete this part?")) return;
+  getEditableParts(cname);
+  var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  extra[cname].parts.splice(idx,1);
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  showToast("Part deleted!", false);
+  openEditCust(cname);
+}
+function addPartFromModal(){
+  var cname   = document.getElementById("editCustKey").value;
+  var newPart = document.getElementById("newPartInput").value.trim();
+  if(!newPart){ showToast("Enter part number!",true); return; }
+  getEditableParts(cname);
+  var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
+  extra[cname].parts.unshift(newPart);
+  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  document.getElementById("newPartInput").value = "";
+  showToast("Part added!", false);
+  openEditCust(cname);
+}
+function rebuildCustomerDropdown(){
+  var sel     = document.getElementById("customerSelect");
+  var current = sel.value;
+  while(sel.options.length > 1) sel.remove(1);
+  var allCust = getCombinedCustomerData();
+  Object.keys(allCust).forEach(function(name){
+    var o = document.createElement("option");
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+  var other = document.createElement("option");
+  other.value = "__other__"; other.textContent = "Other (type below)";
+  sel.appendChild(other);
+  sel.value = current;
+  if(current && current !== "__other__") onCustomerChange();
+}
+
 function loadDriveLog(){
   try {
     var log = JSON.parse(localStorage.getItem("btpl_drive_log")||"[]");
