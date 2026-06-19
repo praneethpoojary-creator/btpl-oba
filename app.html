@@ -12466,17 +12466,17 @@ function uploadToDrive({doc, filename}){
     var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYRtzD0hxyKOqYWWxHe9KPgpQPL4UdfiSV4wSlZEpdYG4mgOTDRfWxaviMQJouZKAZpA/exec";
     // Send metadata only first, then PDF separately if needed
     var logData = {
-      filename:    filename,
-      pdfBase64:   base64PDF,
-      customer:    gv("customer"),
-      modelName:   gv("modelName"),
-      partNo:      gv("partNo"),
-      quantity:    gv("quantity"),
-      invoiceNo:   gv("invoiceNo"),
-      lotSize:     (document.getElementById("lotVal")||{}).value||"",
-      status:      STATUS === "acc" ? "Accepted" : "Rejected",
-      obaBy:       gv("obaBy"),
-      date:        gv("date"),
+      filename:  filename,
+      pdf:       base64PDF,
+      customer:  gv("customer"),
+      modelName: gv("modelName"),
+      partNo:    gv("partNo"),
+      quantity:  gv("quantity"),
+      invoiceNo: gv("invoiceNo"),
+      lotSize:   (document.getElementById("lotVal")||{}).value||"",
+      status:    STATUS === "acc" ? "Accepted" : "Rejected",
+      obaBy:     gv("obaBy"),
+      date:      gv("date"),
       submittedBy: CURRENT_USER || ""
     };
     setStatus("Uploading... please wait", "info");
@@ -12493,10 +12493,10 @@ function uploadToDrive({doc, filename}){
         var result;
         try{ result = JSON.parse(text); }
         catch(e){ throw new Error("Invalid response: " + text.substring(0,100)); }
-        if(result.status === "success" || result.fileUrl){
+        if(result.status === "success" || result.link || result.fileUrl){
           setStatus("Submitted successfully!", "ok");
           setBtns(false, "Submit to Drive");
-          saveDriveLog(filename, result.fileUrl || "");
+          saveDriveLog(filename, result.link || result.fileUrl || "");
           loadDriveLog();
           window.showToast("Submitted to Drive!", false);
           // Also download PDF locally as backup
