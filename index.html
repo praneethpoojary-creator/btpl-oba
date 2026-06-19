@@ -12052,6 +12052,30 @@ function buildPDFDoc(){
   return {doc, filename:"OBA_"+ms+"_"+ds+".pdf"};
 }
 
+function gv(id){
+  var el = document.getElementById(id);
+  if(!el) return "";
+  if(id === "customer"){
+    var sel = document.getElementById("customerSelect");
+    if(sel && sel.style.display !== "none" && sel.value && sel.value !== "__other__") return sel.value;
+    return el.value ? el.value.trim() : "";
+  }
+  if(id === "partNo"){
+    var pSel = document.getElementById("partSelect");
+    var pInp = document.getElementById("partNo");
+    var val = "";
+    if(pSel && pSel.style.display !== "none" && pSel.value && pSel.value !== "Other")
+      val = pSel.value.split(" - ")[0].split(" — ")[0].trim();
+    else if(pInp) val = pInp.value.trim();
+    return val;
+  }
+  if(id === "modelName"){
+    var mInp = document.getElementById("modelName");
+    return mInp ? mInp.value.trim() : "";
+  }
+  return el.value ? el.value.trim() : "";
+}
+
 function doPreview(){
   const CPS=["Check for any damages in packing box and honey comb","Verify the product as per OQC checklist","Verify Harness with Harness matrix","Verify Label with Label matrix","Check for any physical damages of PCBA/Harness/Enclosure/Label","Check for outer box label","Check for Quality alert if any"];
   let cpHTML="";
