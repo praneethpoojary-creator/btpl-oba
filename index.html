@@ -11436,7 +11436,16 @@ function startScanner(){
   }).then(function(stream){
     scannerStream = stream;
     video.srcObject = stream;
-    video.play();
+    video.play().then(function(){
+      // After play starts, try single-shot focus to lock on barcode
+      var track2 = stream.getVideoTracks()[0];
+      try{
+        track2.applyConstraints({advanced:[{focusMode:"single-shot"}]});
+        setTimeout(function(){
+          try{ track2.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
+        },500);
+      }catch(e){}
+    }).catch(function(){});
     var track = stream.getVideoTracks()[0];
     var caps = track.getCapabilities ? track.getCapabilities() : {};
     // Apply best focus settings
@@ -12483,9 +12492,11 @@ function uploadToDrive({doc, filename}){
         }
       })
       .catch(function(err){
-        setStatus("Upload failed: " + err.message, "err");
+        var msg = "Upload failed: " + (err.message || err);
+        setStatus(msg, "err");
         setBtns(false, "Submit to Drive");
-        showToast("Upload failed - check connection", true);
+        window.showToast(msg, true);
+        console.error("Upload error:", err);
       });
   };
   reader.onerror = function(){
