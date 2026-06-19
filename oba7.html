@@ -11110,6 +11110,29 @@ function autoLogin(){
   }
 }
 
+function loadDriveLog(){
+  try {
+    var log = JSON.parse(localStorage.getItem("btpl_drive_log")||"[]");
+    var container = document.getElementById("driveLogList");
+    if(!container) return;
+    if(log.length === 0){ container.innerHTML = "<div style='color:#aaa;font-size:12px;padding:8px;'>No submissions yet</div>"; return; }
+    container.innerHTML = log.slice(-10).reverse().map(function(entry){
+      return "<div style='padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:11px;'>"
+        + "<a href='" + entry.url + "' target='_blank' style='color:#1e40af;text-decoration:none;'>" + entry.name + "</a>"
+        + "<div style='color:#888;'>" + entry.date + "</div></div>";
+    }).join("");
+  } catch(e){ console.error("loadDriveLog error:", e); }
+}
+
+function saveDriveLog(filename, url){
+  try {
+    var log = JSON.parse(localStorage.getItem("btpl_drive_log")||"[]");
+    log.push({ name: filename, url: url, date: new Date().toLocaleString() });
+    if(log.length > 50) log = log.slice(-50);
+    localStorage.setItem("btpl_drive_log", JSON.stringify(log));
+  } catch(e){}
+}
+
 function showApp(username, role){
   try {
     const allUsers = getCombinedUsers();
