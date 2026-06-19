@@ -11402,6 +11402,118 @@ function rebuildCustomerDropdown(){
   if(current && current !== "__other__") onCustomerChange();
 }
 
+// -- BARCODE SCANNER ------------------------------------------
+var scannerTargetId = null;
+var scannerStream   = null;
+var scannerRAF      = null;
+
+function openScanner(inputId, label){
+  scannerTargetId = inputId;
+  var labelEl = document.getElementById("scannerLabel");
+  var modal   = document.getElementById("scannerModal");
+  var status  = document.getElementById("scannerStatus");
+  var manual  = document.getElementById("manualBarcode");
+  if(!modal){ alert("Scanner not ready"); return; }
+  if(labelEl) labelEl.textContent = label;
+  if(manual)  manual.value = "";
+  if(status)  status.textContent = "Starting camera...";
+  modal.classList.add("active");
+  modal.style.display = "flex";
+  startScanner();
+}
+
+function startScanner(){
+  var video  = document.getElementById("scannerVideo");
+  var status = document.getElementById("scannerStatus");
+  if(!video) return;
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode:"environment", width:{ideal:1280}, height:{ideal:720} }
+  }).then(function(stream){
+    scannerStream = stream;
+    video.srcObject = stream;
+    video.play();
+    var track = stream.getVideoTracks()[0];
+    try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
+    video.ontouchend = function(e){
+      var touch = e.changedTouches[0];
+      var ring  = document.getElementById("tapFocusRing");
+      if(ring){
+        ring.style.left = touch.clientX+"px";
+        ring.style.top  = touch.clientY+"px";
+        ring.style.display="block"; ring.style.opacity="1";
+        setTimeout(function(){ ring.style.opacity="0"; setTimeout(function(){ ring.style.display="none"; },300); },700);
+      }
+      try{
+        var rect=video.getBoundingClientRect();
+        track.applyConstraints({advanced:[{focusMode:"single-shot",pointOfInterest:{x:(touch.clientX-rect.left)/rect.width,y:(touch.clientY-rect.top)/rect.height}}]});
+        setTimeout(function(){ try{track.applyConstraints({advanced:[{focusMode:"continuous"}]});}catch(e){}; },1500);
+      }catch(e){}
+    };
+    if("BarcodeDetector" in window){
+      var detector = new BarcodeDetector({formats:["code_128","code_39","code_93","ean_13","ean_8","upc_a","upc_e","qr_code","data_matrix","itf","codabar"]});
+      if(status) status.textContent = "Ready! Hold barcode in box. Tap to focus.";
+      var detect = function(){
+        if(!scannerStream) return;
+        detector.detect(video).then(function(codes){
+          if(codes.length > 0){ onBarcodeFound(codes[0].rawValue); }
+          else { scannerRAF = requestAnimationFrame(detect); }
+        }).catch(function(){ scannerRAF = requestAnimationFrame(detect); });
+      };
+      scannerRAF = requestAnimationFrame(detect);
+    } else {
+      if(status) status.textContent = "Hold barcode in green box. Tap to focus.";
+      var canvas = document.createElement("canvas");
+      var ctx    = canvas.getContext("2d");
+      var detect2 = function(){
+        if(!scannerStream) return;
+        if(video.readyState === video.HAVE_ENOUGH_DATA){
+          canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+          ctx.drawImage(video,0,0);
+          var img = ctx.getImageData(0,0,canvas.width,canvas.height);
+          if(typeof jsQR !== "undefined"){
+            var code = jsQR(img.data,img.width,img.height,{inversionAttempts:"dontInvert"});
+            if(code){ onBarcodeFound(code.data); return; }
+          }
+        }
+        scannerRAF = requestAnimationFrame(detect2);
+      };
+      scannerRAF = requestAnimationFrame(detect2);
+    }
+  }).catch(function(err){
+    if(status) status.textContent = "Camera error - type barcode below";
+    var manual = document.getElementById("manualBarcode");
+    if(manual) manual.focus();
+  });
+}
+
+function onBarcodeFound(val){
+  if(!val || !scannerTargetId) return;
+  var el = document.getElementById(scannerTargetId);
+  if(el){ el.value = val; el.classList.add("ok"); }
+  window.showToast("Scanned: "+val, false);
+  setTimeout(closeScanner, 500);
+}
+
+function closeScanner(){
+  if(scannerRAF){ cancelAnimationFrame(scannerRAF); scannerRAF=null; }
+  if(scannerStream){ scannerStream.getTracks().forEach(function(t){t.stop();}); scannerStream=null; }
+  var v = document.getElementById("scannerVideo");
+  if(v) v.srcObject = null;
+  var m = document.getElementById("scannerModal");
+  if(m){ m.classList.remove("active"); m.style.display="none"; }
+  scannerTargetId = null;
+}
+
+function saveManualBarcode(){
+  var val = document.getElementById("manualBarcode").value.trim();
+  if(val && scannerTargetId){
+    var el = document.getElementById(scannerTargetId);
+    if(el){ el.value = val; el.classList.toggle("ok", val.length>0); }
+    closeScanner();
+    window.showToast("Barcode saved!", false);
+  }
+}
+
 function loadDriveLog(){
   try {
     var log = JSON.parse(localStorage.getItem("btpl_drive_log")||"[]");
