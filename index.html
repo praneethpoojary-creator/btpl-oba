@@ -11911,7 +11911,7 @@ function setBtns(disabled, label){
   });
 }
 
-function getToken(){
+async function getToken(){
   return new Promise((resolve, reject)=>{
     if(gToken){ resolve(gToken); return; }
     if(typeof google === "undefined"){ reject(new Error("Google Sign-In not loaded")); return; }
