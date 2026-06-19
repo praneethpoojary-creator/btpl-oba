@@ -11500,6 +11500,52 @@ function startScanner(){
   });
 }
 
+function scanFromPhoto(input){
+  if(!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var img  = new Image();
+  var url  = URL.createObjectURL(file);
+  img.onload = function(){
+    var canvas = document.createElement("canvas");
+    canvas.width  = img.width;
+    canvas.height = img.height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    // Try BarcodeDetector first
+    if("BarcodeDetector" in window){
+      var detector = new BarcodeDetector({formats:["code_128","code_39","code_93","ean_13","ean_8","upc_a","upc_e","qr_code","data_matrix","itf","codabar"]});
+      detector.detect(canvas).then(function(codes){
+        if(codes.length > 0){
+          onBarcodeFound(codes[0].rawValue);
+        } else {
+          // Try jsQR fallback
+          var imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+          if(typeof jsQR !== "undefined"){
+            var code = jsQR(imgData.data, imgData.width, imgData.height);
+            if(code){ onBarcodeFound(code.data); return; }
+          }
+          var status = document.getElementById("scannerStatus");
+          if(status) status.textContent = "Could not read barcode - type manually below";
+        }
+      }).catch(function(){
+        var status = document.getElementById("scannerStatus");
+        if(status) status.textContent = "Error - type barcode manually below";
+      });
+    } else if(typeof jsQR !== "undefined"){
+      var imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+      var code = jsQR(imgData.data, imgData.width, imgData.height);
+      if(code){ onBarcodeFound(code.data); }
+      else {
+        var status = document.getElementById("scannerStatus");
+        if(status) status.textContent = "Could not read - type manually below";
+      }
+    }
+    input.value = "";
+  };
+  img.src = url;
+}
+
 function onBarcodeFound(val){
   if(!val || !scannerTargetId) return;
   var el = document.getElementById(scannerTargetId);
