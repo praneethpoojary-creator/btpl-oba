@@ -12059,7 +12059,7 @@ function fmtDate(d){
   return d;
 }
 
-function showToast(msg, isErr){
+window.showToast = function showToast(msg, isErr){
   var t = document.getElementById("toast");
   if(!t) return;
   t.textContent = msg;
