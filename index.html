@@ -11426,14 +11426,28 @@ function startScanner(){
   var video  = document.getElementById("scannerVideo");
   var status = document.getElementById("scannerStatus");
   if(!video) return;
+  // High resolution for Code 128 barcode scanning
   navigator.mediaDevices.getUserMedia({
-    video: { facingMode:"environment", width:{ideal:1280}, height:{ideal:720} }
+    video: {
+      facingMode: "environment",
+      width:  { ideal: 1920, min: 1280 },
+      height: { ideal: 1080, min: 720 }
+    }
   }).then(function(stream){
     scannerStream = stream;
     video.srcObject = stream;
     video.play();
     var track = stream.getVideoTracks()[0];
-    try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
+    var caps = track.getCapabilities ? track.getCapabilities() : {};
+    // Apply best focus settings
+    var constraints = { advanced: [] };
+    if(caps.focusMode && caps.focusMode.indexOf("continuous") >= 0)
+      constraints.advanced.push({ focusMode: "continuous" });
+    // Try to zoom in slightly for better barcode detail
+    if(caps.zoom && caps.zoom.max >= 1.5)
+      constraints.advanced.push({ zoom: 1.5 });
+    if(constraints.advanced.length > 0)
+      try{ track.applyConstraints(constraints); }catch(e){}
     video.ontouchend = function(e){
       var touch = e.changedTouches[0];
       var ring  = document.getElementById("tapFocusRing");
