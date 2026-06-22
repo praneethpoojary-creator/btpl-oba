@@ -12024,6 +12024,33 @@ function setOK(btn,t){
       rem.style.border=""; rem.value="NA";
     }
   }
+  // Auto update inspection status based on all checkpoints
+  autoUpdateStatus();
+}
+
+function autoUpdateStatus(){
+  var allBtns = document.querySelectorAll(".okbtn.ok-on, .okbtn.nok-on");
+  if(allBtns.length === 0) return; // nothing selected yet
+  var hasNotOk = document.querySelectorAll(".okbtn.nok-on").length > 0;
+  // Count total checkpoint cells
+  var totalCells = document.querySelectorAll(".okgrp").length;
+  var selectedCells = allBtns.length;
+  if(selectedCells === 0) return;
+  if(hasNotOk){
+    // Auto select Rejected
+    STATUS = "rej";
+    var bacc = document.getElementById("bacc");
+    var brej = document.getElementById("brej");
+    if(bacc) bacc.className = "badge acc";
+    if(brej) brej.className = "badge rej on";
+  } else {
+    // All OK - auto select Accepted
+    STATUS = "acc";
+    var bacc = document.getElementById("bacc");
+    var brej = document.getElementById("brej");
+    if(bacc) bacc.className = "badge acc on";
+    if(brej) brej.className = "badge rej";
+  }
 }
 
 function doReset(){
