@@ -12030,26 +12030,12 @@ function setOK(btn,t){
 
 function autoUpdateStatus(){
   var allBtns = document.querySelectorAll(".okbtn.ok-on, .okbtn.nok-on");
-  if(allBtns.length === 0) return; // nothing selected yet
+  if(allBtns.length === 0) return;
   var hasNotOk = document.querySelectorAll(".okbtn.nok-on").length > 0;
-  // Count total checkpoint cells
-  var totalCells = document.querySelectorAll(".okgrp").length;
-  var selectedCells = allBtns.length;
-  if(selectedCells === 0) return;
   if(hasNotOk){
-    // Auto select Rejected
-    STATUS = "rej";
-    var bacc = document.getElementById("bacc");
-    var brej = document.getElementById("brej");
-    if(bacc) bacc.className = "badge acc";
-    if(brej) brej.className = "badge rej on";
+    togStatus("rej"); // Auto Rejected + NC Details editable
   } else {
-    // All OK - auto select Accepted
-    STATUS = "acc";
-    var bacc = document.getElementById("bacc");
-    var brej = document.getElementById("brej");
-    if(bacc) bacc.className = "badge acc on";
-    if(brej) brej.className = "badge rej";
+    togStatus("acc"); // Auto Accepted + NC Details = NA locked
   }
 }
 
