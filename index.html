@@ -12033,9 +12033,26 @@ function autoUpdateStatus(){
   if(allBtns.length === 0) return;
   var hasNotOk = document.querySelectorAll(".okbtn.nok-on").length > 0;
   if(hasNotOk){
-    togStatus("rej"); // Auto Rejected + NC Details editable
+    togStatus("rej");
+    // Auto collect all NOT OK remarks into NC Details
+    var ncRemarks = [];
+    document.querySelectorAll("#xbody tr").forEach(function(tr, ri){
+      if(tr.querySelector(".nok-on")){
+        var rem = tr.querySelector(".rem-inp");
+        var val = rem ? rem.value.trim() : "";
+        if(val && val !== "NA"){
+          ncRemarks.push("CP" + (ri+1) + ": " + val);
+        } else {
+          ncRemarks.push("CP" + (ri+1) + ": NOT OK");
+        }
+      }
+    });
+    var nc = document.getElementById("ncDet");
+    if(nc && ncRemarks.length > 0){
+      nc.value = ncRemarks.join(" | ");
+    }
   } else {
-    togStatus("acc"); // Auto Accepted + NC Details = NA locked
+    togStatus("acc");
   }
 }
 
