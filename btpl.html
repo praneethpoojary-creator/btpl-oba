@@ -12027,20 +12027,47 @@ function setOK(btn,t){
 }
 
 function doReset(){
-  if(!confirm("Reset all?")) return;
-  document.querySelectorAll("input[type=text],input[type=number]").forEach(i=>i.value="");
-  document.getElementById("date").value=new Date().toISOString().slice(0,10);
-loadDriveLog();
-  document.querySelectorAll(".okbtn").forEach(b=>b.classList.remove("ok-on","nok-on"));
-  document.querySelectorAll(".bc-inp").forEach(b=>{b.value="";b.classList.remove("ok");});
-  document.querySelectorAll("textarea").forEach(t=>t.value="");
+  if(!confirm("Reset all fields?")) return;
+  // Reset all text/number inputs
+  document.querySelectorAll("input[type=text],input[type=number]").forEach(function(i){ i.value=""; });
+  // Reset date to today
+  document.getElementById("date").value = new Date().toISOString().slice(0,10);
+  // Reset customer dropdown
+  var custSel = document.getElementById("customerSelect");
+  if(custSel) custSel.value = "";
+  // Reset part number
+  var partSel = document.getElementById("partSelect");
+  if(partSel){ partSel.value=""; partSel.style.display="none"; }
+  var partInp = document.getElementById("partNo");
+  if(partInp) partInp.value="";
+  // Reset model name
+  var model = document.getElementById("modelName");
+  if(model) model.value="";
+  // Reset OK/NOT OK buttons
+  document.querySelectorAll(".okbtn").forEach(function(b){ b.classList.remove("ok-on","nok-on"); });
+  // Reset barcode inputs
+  document.querySelectorAll(".bc-inp").forEach(function(b){ b.value=""; b.classList.remove("ok"); });
+  // Reset textareas
+  document.querySelectorAll("textarea").forEach(function(t){ t.value=""; });
+  // Reset remarks
+  document.querySelectorAll(".rmk").forEach(function(r){ r.value="NA"; r.style.background=""; r.readOnly=true; });
+  // Reset status
   STATUS=""; N=5;
-  document.getElementById("bacc").className="badge acc";
-  document.getElementById("brej").className="badge rej";
+  var bacc = document.getElementById("bacc");
+  var brej = document.getElementById("brej");
+  if(bacc) bacc.className="badge acc";
+  if(brej) brej.className="badge rej";
+  // Reset lot info
+  var lotVal = document.getElementById("lotVal");
+  if(lotVal) lotVal.value="";
+  var spill = document.getElementById("spill");
+  if(spill){ spill.textContent="5 Samples"; spill.className="spill five"; }
+  // Rebuild table
   buildTable(5);
-  document.getElementById("lotVal").value="5 Nos";
-  document.getElementById("spill").textContent="5 Samples";
-  document.getElementById("spill").className="spill five";
+  // Reset upload status
+  setStatus("","");
+  loadDriveLog();
+  window.showToast("Form reset!", false);
 }
 
 function buildPDFDoc(){
