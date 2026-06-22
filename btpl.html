@@ -12463,7 +12463,7 @@ function uploadToDrive({doc, filename}){
   var reader  = new FileReader();
   reader.onload = function(){
     var base64PDF = reader.result.split(",")[1];
-    var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYRtzD0hxyKOqYWWxHe9KPgpQPL4UdfiSV4wSlZEpdYG4mgOTDRfWxaviMQJouZKAZpA/exec";
+    var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZ3dUb2t71Kxd0uOq4rCh775y-8evrcKKWYjnN4ehnSm524Gd2C3hp3lShKjUD0ZlRzw/exec";
     // Send metadata only first, then PDF separately if needed
     var logData = {
       filename:  filename,
@@ -12480,7 +12480,7 @@ function uploadToDrive({doc, filename}){
       submittedBy: CURRENT_USER || ""
     };
     setStatus("Uploading to Drive... please wait", "info");
-    var APPS_SCRIPT_URL2 = "https://script.google.com/macros/s/AKfycbxYRtzD0hxyKOqYWWxHe9KPgpQPL4UdfiSV4wSlZEpdYG4mgOTDRfWxaviMQJouZKAZpA/exec";
+    var APPS_SCRIPT_URL2 = "https://script.google.com/macros/s/AKfycbzZ3dUb2t71Kxd0uOq4rCh775y-8evrcKKWYjnN4ehnSm524Gd2C3hp3lShKjUD0ZlRzw/exec";
     // Send without PDF first to test
     // metaData matches Apps Script field names exactly
     var metaData = {
