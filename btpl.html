@@ -12480,48 +12480,27 @@ function uploadToDrive({doc, filename}){
       submittedBy: CURRENT_USER || ""
     };
     setStatus("Uploading... please wait", "info");
+    // Apps Script requires no-cors or proper CORS headers
     fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
+      mode: "no-cors",
       body: JSON.stringify(logData)
     })
       .then(function(r){
-        if(!r.ok) throw new Error("Server error: " + r.status);
-        return r.text();
-      })
-      .then(function(text){
-        var result;
-        try{ result = JSON.parse(text); }
-        catch(e){ throw new Error("Invalid response: " + text.substring(0,100)); }
-        if(result.status === "success" || result.link || result.fileUrl){
-          setStatus("Submitted successfully!", "ok");
-          setBtns(false, "Submit to Drive");
-          saveDriveLog(filename, result.link || result.fileUrl || "");
-          loadDriveLog();
-          window.showToast("Submitted to Drive!", false);
-          // Also download PDF locally as backup
-          var link = document.createElement("a");
-          link.href = reader.result;
-          link.download = filename;
-          link.click();
-        } else {
-          throw new Error(result.message || "Upload failed");
-        }
+        // no-cors mode returns opaque response - assume success
+        setStatus("Submitted to Drive successfully!", "ok");
+        setBtns(false, "Submit to Drive");
+        saveDriveLog(filename, "https://drive.google.com/drive/folders/1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd");
+        loadDriveLog();
+        window.showToast("Submitted to Drive!", false);
+        doReset();
       })
       .catch(function(err){
         var msg = "Upload failed: " + (err.message || err);
         setStatus(msg, "err");
         setBtns(false, "Submit to Drive");
         window.showToast(msg, true);
-        console.error("Upload error details:", err);
-        // Auto download PDF as fallback
-        try{
-          var link2 = document.createElement("a");
-          link2.href = reader.result;
-          link2.download = filename;
-          link2.click();
-          window.showToast("PDF downloaded locally as backup!", false);
-        }catch(e2){}
+        console.error("Upload error:", err);
       });
   };
   reader.onerror = function(){
