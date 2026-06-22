@@ -12479,29 +12479,33 @@ function uploadToDrive({doc, filename}){
       date:      gv("date"),
       submittedBy: CURRENT_USER || ""
     };
-    setStatus("Uploading... please wait", "info");
-    // Apps Script requires no-cors or proper CORS headers
+    setStatus("Uploading to Drive... please wait", "info");
+    // Apps Script reads e.parameter.payload - use URLSearchParams
+    var params = new URLSearchParams();
+    params.append("payload", JSON.stringify(logData));
     fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify(logData)
+      body: params
     })
-      .then(function(r){
-        // no-cors mode returns opaque response - assume success
+    .then(function(r){ return r.json(); })
+    .then(function(result){
+      if(result.status === "success"){
         setStatus("Submitted to Drive successfully!", "ok");
         setBtns(false, "Submit to Drive");
-        saveDriveLog(filename, "https://drive.google.com/drive/folders/1xjjzsg1uwgIxYODUAa9ZfvODW26ZhYLd");
+        saveDriveLog(filename, result.link || "");
         loadDriveLog();
         window.showToast("Submitted to Drive!", false);
         doReset();
-      })
-      .catch(function(err){
-        var msg = "Upload failed: " + (err.message || err);
-        setStatus(msg, "err");
-        setBtns(false, "Submit to Drive");
-        window.showToast(msg, true);
-        console.error("Upload error:", err);
-      });
+      } else {
+        throw new Error(result.message || "Upload failed");
+      }
+    })
+    .catch(function(err){
+      var msg = "Upload failed: " + (err.message || err);
+      setStatus(msg, "err");
+      setBtns(false, "Submit to Drive");
+      window.showToast(msg, true);
+    });
   };
   reader.onerror = function(){
     setStatus("PDF read error", "err");
