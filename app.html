@@ -12498,13 +12498,24 @@ function uploadToDrive({doc, filename}){
       submittedBy: CURRENT_USER || ""
     };
     // Send as URLSearchParams - Apps Script reads e.parameter.payload
+    console.log("Submitting to Apps Script...");
+    console.log("Filename:", metaData.filename);
+    console.log("Customer:", metaData.customer);
+    console.log("PDF length:", metaData.pdf ? metaData.pdf.length : 0);
+    
     var params = new URLSearchParams();
     params.append("payload", JSON.stringify(metaData));
+    
     fetch(APPS_SCRIPT_URL2, { method:"POST", body:params })
-    .then(function(r){ return r.text(); })
+    .then(function(r){ 
+      console.log("HTTP status:", r.status);
+      return r.text(); 
+    })
     .then(function(txt){
-      console.log("Response:", txt);
-      var res; try{ res=JSON.parse(txt); }catch(e){ res={status:"error",message:txt}; }
+      console.log("Apps Script response:", txt.substring(0,200));
+      var res; 
+      try{ res=JSON.parse(txt); }
+      catch(e){ res={status:"error", message:"Parse error: "+txt.substring(0,100)}; }
       if(res.status==="success"){
         setStatus("Submitted to Drive!", "ok");
         setBtns(false, "Submit to Drive");
@@ -12512,9 +12523,12 @@ function uploadToDrive({doc, filename}){
         loadDriveLog();
         window.showToast("Submitted to Drive!", false);
         doReset();
-      } else { throw new Error(res.message||"Failed"); }
+      } else { 
+        throw new Error(res.message || "Upload failed"); 
+      }
     })
     .catch(function(err){
+      console.error("Upload error:", err);
       setStatus("Failed: "+err.message, "err");
       setBtns(false, "Submit to Drive");
       window.showToast("Upload failed: "+err.message, true);
