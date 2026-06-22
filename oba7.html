@@ -12482,48 +12482,42 @@ function uploadToDrive({doc, filename}){
     setStatus("Uploading to Drive... please wait", "info");
     var APPS_SCRIPT_URL2 = "https://script.google.com/macros/s/AKfycbxYRtzD0hxyKOqYWWxHe9KPgpQPL4UdfiSV4wSlZEpdYG4mgOTDRfWxaviMQJouZKAZpA/exec";
     // Send without PDF first to test
+    // metaData matches Apps Script field names exactly
     var metaData = {
-      filename:    logData.filename,
-      pdf:         logData.pdf,
-      customer:    logData.customer,
-      modelName:   logData.modelName,
-      partNo:      logData.partNo,
-      quantity:    logData.quantity,
-      invoiceNo:   logData.invoiceNo,
-      lotSize:     logData.lotSize,
-      status:      logData.status,
-      obaBy:       logData.obaBy,
-      date:        logData.date,
-      submittedBy: logData.submittedBy
+      filename:    filename,
+      pdf:         base64PDF,
+      customer:    gv("customer"),
+      modelName:   gv("modelName"),
+      partNo:      gv("partNo"),
+      quantity:    gv("quantity"),
+      invoiceNo:   gv("invoiceNo"),
+      lotSize:     (document.getElementById("lotVal")||{}).value||"",
+      status:      STATUS === "acc" ? "Accepted" : "Rejected",
+      obaBy:       gv("obaBy"),
+      date:        gv("date"),
+      submittedBy: CURRENT_USER || ""
     };
+    // Send as URLSearchParams - Apps Script reads e.parameter.payload
     var params = new URLSearchParams();
     params.append("payload", JSON.stringify(metaData));
-    fetch(APPS_SCRIPT_URL2, {
-      method: "POST",
-      body: params
-    })
+    fetch(APPS_SCRIPT_URL2, { method:"POST", body:params })
     .then(function(r){ return r.text(); })
-    .then(function(text){
-      console.log("Apps Script response:", text);
-      var result;
-      try{ result = JSON.parse(text); } catch(e){ result = {status:"error", message: text}; }
-      if(result.status === "success"){
+    .then(function(txt){
+      console.log("Response:", txt);
+      var res; try{ res=JSON.parse(txt); }catch(e){ res={status:"error",message:txt}; }
+      if(res.status==="success"){
         setStatus("Submitted to Drive!", "ok");
         setBtns(false, "Submit to Drive");
-        saveDriveLog(filename, result.link || "");
+        saveDriveLog(filename, res.link||"");
         loadDriveLog();
         window.showToast("Submitted to Drive!", false);
         doReset();
-      } else {
-        throw new Error(result.message || "Upload failed");
-      }
+      } else { throw new Error(res.message||"Failed"); }
     })
     .catch(function(err){
-      var msg = "Upload failed: " + (err.message || err);
-      setStatus(msg, "err");
+      setStatus("Failed: "+err.message, "err");
       setBtns(false, "Submit to Drive");
-      window.showToast(msg, true);
-      console.error("Upload error:", err);
+      window.showToast("Upload failed: "+err.message, true);
     });
   };
   reader.onerror = function(){
