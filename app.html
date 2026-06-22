@@ -12480,17 +12480,35 @@ function uploadToDrive({doc, filename}){
       submittedBy: CURRENT_USER || ""
     };
     setStatus("Uploading to Drive... please wait", "info");
-    // Apps Script reads e.parameter.payload - use URLSearchParams
+    var APPS_SCRIPT_URL2 = "https://script.google.com/macros/s/AKfycbxYRtzD0hxyKOqYWWxHe9KPgpQPL4UdfiSV4wSlZEpdYG4mgOTDRfWxaviMQJouZKAZpA/exec";
+    // Send without PDF first to test
+    var metaData = {
+      filename:    logData.filename,
+      pdf:         logData.pdf,
+      customer:    logData.customer,
+      modelName:   logData.modelName,
+      partNo:      logData.partNo,
+      quantity:    logData.quantity,
+      invoiceNo:   logData.invoiceNo,
+      lotSize:     logData.lotSize,
+      status:      logData.status,
+      obaBy:       logData.obaBy,
+      date:        logData.date,
+      submittedBy: logData.submittedBy
+    };
     var params = new URLSearchParams();
-    params.append("payload", JSON.stringify(logData));
-    fetch(APPS_SCRIPT_URL, {
+    params.append("payload", JSON.stringify(metaData));
+    fetch(APPS_SCRIPT_URL2, {
       method: "POST",
       body: params
     })
-    .then(function(r){ return r.json(); })
-    .then(function(result){
+    .then(function(r){ return r.text(); })
+    .then(function(text){
+      console.log("Apps Script response:", text);
+      var result;
+      try{ result = JSON.parse(text); } catch(e){ result = {status:"error", message: text}; }
       if(result.status === "success"){
-        setStatus("Submitted to Drive successfully!", "ok");
+        setStatus("Submitted to Drive!", "ok");
         setBtns(false, "Submit to Drive");
         saveDriveLog(filename, result.link || "");
         loadDriveLog();
@@ -12505,6 +12523,7 @@ function uploadToDrive({doc, filename}){
       setStatus(msg, "err");
       setBtns(false, "Submit to Drive");
       window.showToast(msg, true);
+      console.error("Upload error:", err);
     });
   };
   reader.onerror = function(){
