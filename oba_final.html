@@ -12451,12 +12451,13 @@ async function doSubmit(){
   }
 
   // -- All barcodes required --------------------------------
-  for(var i=1;i<=N;i++){
-    var bc = (document.getElementById("bc"+i)||{}).value||"";
-    if(!bc.trim()){
-      showToast("⚠ Required: Sample " + i + " Barcode", true);
-      var bcEl = document.getElementById("bc"+i);
-      if(bcEl) bcEl.focus();
+  var bcInputs = document.querySelectorAll(".bc-inp");
+  for(var bi=0; bi<bcInputs.length; bi++){
+    if(!bcInputs[bi].value.trim()){
+      showToast("⚠ Required: Sample " + (bi+1) + " Barcode", true);
+      bcInputs[bi].focus();
+      bcInputs[bi].style.border = "2px solid #dc2626";
+      setTimeout(function(el){ el.style.border=""; }(bcInputs[bi]), 3000);
       return;
     }
   }
