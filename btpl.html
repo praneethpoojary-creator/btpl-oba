@@ -12272,7 +12272,7 @@ function buildPDFDoc(){
     "Check for Quality alert if any"
   ];
   const cpRH=8;
-  const trows=[...document.querySelectorAll("#xbody tr")].slice(1);
+  const trows=[...document.querySelectorAll("#xbody tr")];
   trows.forEach((tr,ri)=>{
     FR(M,y,aw,cpRH,WHT,GRY);
     LN(M+slW,y,M+slW,y+cpRH);
