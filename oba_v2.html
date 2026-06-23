@@ -12360,7 +12360,49 @@ function gv(id){
   return el.value ? el.value.trim() : "";
 }
 
+function validateForm(){
+  if(!gv("customer"))  { window.showToast("Required: Customer",true); return false; }
+  if(!gv("partNo"))    { window.showToast("Required: Part Number",true); return false; }
+  if(!gv("modelName")) { window.showToast("Required: Model Name",true); return false; }
+  if(!gv("quantity"))  { window.showToast("Required: Quantity",true); return false; }
+  if(!gv("invoiceNo")) { window.showToast("Required: Invoice Number",true); return false; }
+  if(!gv("obaBy"))     { window.showToast("Required: OBA Done By",true); return false; }
+  if(!STATUS)          { window.showToast("Required: Complete checkpoints first",true); return false; }
+  if(STATUS==="rej" && (!gv("ncDet") || gv("ncDet")==="NA" || !gv("ncDet").trim())){
+    window.showToast("Required: NC Details (Inspection Rejected)", true);
+    document.getElementById("ncDet").focus(); return false;
+  }
+  // Check all checkpoints filled
+  var cpRows = document.querySelectorAll("#xbody tr");
+  for(var ri=0; ri<cpRows.length; ri++){
+    if(!cpRows[ri].querySelector(".ok-on,.nok-on")){
+      window.showToast("Fill checkpoint " + (ri+1), true);
+      cpRows[ri].scrollIntoView({behavior:"smooth"}); return false;
+    }
+    if(cpRows[ri].querySelector(".nok-on")){
+      var rem = cpRows[ri].querySelector(".rem-inp");
+      if(rem && (!rem.value.trim() || rem.value.trim()==="NA")){
+        window.showToast("Enter remarks for checkpoint " + (ri+1), true);
+        rem.focus(); return false;
+      }
+    }
+  }
+  // Check all barcodes
+  var bcInputs = document.querySelectorAll(".bc-inp");
+  for(var bi=0; bi<bcInputs.length; bi++){
+    if(!bcInputs[bi].value.trim()){
+      window.showToast("Required: Sample " + (bi+1) + " Barcode", true);
+      bcInputs[bi].focus();
+      bcInputs[bi].style.border = "2px solid #dc2626";
+      setTimeout(function(el){ el.style.border=""; }(bcInputs[bi]), 3000);
+      return false;
+    }
+  }
+  return true;
+}
+
 function doPreview(){
+  if(!validateForm()) return;
   const CPS=["Check for any damages in packing box and honey comb","Verify the product as per OQC checklist","Verify Harness with Harness matrix","Verify Label with Label matrix","Check for any physical damages of PCBA/Harness/Enclosure/Label","Check for outer box label","Check for Quality alert if any"];
   let cpHTML="";
   [...document.querySelectorAll("#xbody tr")].forEach((tr,ri)=>{
@@ -12470,6 +12512,7 @@ async function doSubmit(){
 
 function submitFromPreview(){
   if(!pendingPDF) return;
+  if(!validateForm()) { closePreview(); return; }
   uploadToDrive(pendingPDF);
 }
 
