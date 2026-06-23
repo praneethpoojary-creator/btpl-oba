@@ -12030,32 +12030,30 @@ function autoUpdateStatus(){
   var allBtns = document.querySelectorAll(".okbtn.ok-on, .okbtn.nok-on");
   if(allBtns.length === 0) return;
   var hasNotOk = document.querySelectorAll(".okbtn.nok-on").length > 0;
+  var nc = document.getElementById("ncDet");
   if(hasNotOk){
     STATUS = "rej";
     document.getElementById("bacc").className = "badge acc";
     document.getElementById("brej").className = "badge rej on";
-    // Auto collect all NOT OK remarks into NC Details
-    var ncRemarks = [];
-    document.querySelectorAll("#xbody tr").forEach(function(tr, ri){
-      if(tr.querySelector(".nok-on")){
-        var rem = tr.querySelector(".rem-inp");
-        var val = rem ? rem.value.trim() : "";
-        ncRemarks.push("CP" + (ri+1) + ": " + (val && val !== "NA" ? val : "NOT OK"));
-      }
-    });
-    var nc = document.getElementById("ncDet");
-    if(nc){
-      nc.readOnly = false;
-      nc.style.color = "";
-      nc.style.background = "";
-      nc.value = ncRemarks.join(" | ");
+    if(nc){ 
+      nc.readOnly = false; 
+      nc.style.color = ""; 
+      nc.style.background = "#fffbeb";
+      nc.style.border = "1px solid #f59e0b";
+      if(nc.value === "NA") nc.value = "";
+      nc.placeholder = "Enter NC details...";
     }
   } else {
     STATUS = "acc";
     document.getElementById("bacc").className = "badge acc on";
     document.getElementById("brej").className = "badge rej";
-    var nc = document.getElementById("ncDet");
-    if(nc){ nc.value = "NA"; nc.readOnly = true; nc.style.color = "#888"; nc.style.background = "#f9f9f9"; }
+    if(nc){ 
+      nc.value = "NA"; 
+      nc.readOnly = true; 
+      nc.style.color = "#888"; 
+      nc.style.background = "#f9f9f9";
+      nc.style.border = "";
+    }
   }
 }
 
