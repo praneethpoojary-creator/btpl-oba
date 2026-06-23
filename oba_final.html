@@ -12035,22 +12035,22 @@ function autoUpdateStatus(){
     STATUS = "rej";
     document.getElementById("bacc").className = "badge acc";
     document.getElementById("brej").className = "badge rej on";
-    if(nc){ 
-      nc.readOnly = false; 
-      nc.style.color = ""; 
+    if(nc){
+      nc.readOnly = false;
+      nc.style.color = "";
       nc.style.background = "#fffbeb";
       nc.style.border = "1px solid #f59e0b";
-      if(nc.value === "NA") nc.value = "";
-      nc.placeholder = "Enter NC details...";
+      nc.value = "";
+      nc.placeholder = "Write NC details here...";
     }
   } else {
     STATUS = "acc";
     document.getElementById("bacc").className = "badge acc on";
     document.getElementById("brej").className = "badge rej";
-    if(nc){ 
-      nc.value = "NA"; 
-      nc.readOnly = true; 
-      nc.style.color = "#888"; 
+    if(nc){
+      nc.value = "NA";
+      nc.readOnly = true;
+      nc.style.color = "#888";
       nc.style.background = "#f9f9f9";
       nc.style.border = "";
     }
