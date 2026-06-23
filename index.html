@@ -11044,9 +11044,7 @@ function togStatus(t) {
   if(STATUS==="acc"){
     nc.value="NA"; nc.readOnly=true; nc.style.color="#888"; nc.style.background="#f9f9f9";
   } else if(STATUS==="rej"){
-    if(nc.value==="NA") nc.value="";
     nc.readOnly=false; nc.style.color=""; nc.style.background="";
-    nc.focus();
   } else {
     nc.readOnly=false; nc.style.color=""; nc.style.background="";
   }
@@ -12033,26 +12031,31 @@ function autoUpdateStatus(){
   if(allBtns.length === 0) return;
   var hasNotOk = document.querySelectorAll(".okbtn.nok-on").length > 0;
   if(hasNotOk){
-    togStatus("rej");
+    STATUS = "rej";
+    document.getElementById("bacc").className = "badge acc";
+    document.getElementById("brej").className = "badge rej on";
     // Auto collect all NOT OK remarks into NC Details
     var ncRemarks = [];
     document.querySelectorAll("#xbody tr").forEach(function(tr, ri){
       if(tr.querySelector(".nok-on")){
         var rem = tr.querySelector(".rem-inp");
         var val = rem ? rem.value.trim() : "";
-        if(val && val !== "NA"){
-          ncRemarks.push("CP" + (ri+1) + ": " + val);
-        } else {
-          ncRemarks.push("CP" + (ri+1) + ": NOT OK");
-        }
+        ncRemarks.push("CP" + (ri+1) + ": " + (val && val !== "NA" ? val : "NOT OK"));
       }
     });
     var nc = document.getElementById("ncDet");
-    if(nc && ncRemarks.length > 0){
+    if(nc){
+      nc.readOnly = false;
+      nc.style.color = "";
+      nc.style.background = "";
       nc.value = ncRemarks.join(" | ");
     }
   } else {
-    togStatus("acc");
+    STATUS = "acc";
+    document.getElementById("bacc").className = "badge acc on";
+    document.getElementById("brej").className = "badge rej";
+    var nc = document.getElementById("ncDet");
+    if(nc){ nc.value = "NA"; nc.readOnly = true; nc.style.color = "#888"; nc.style.background = "#f9f9f9"; }
   }
 }
 
