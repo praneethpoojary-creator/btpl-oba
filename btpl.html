@@ -11098,6 +11098,40 @@ function doLogout(){
   document.getElementById("loginPass").value = "";
 }
 
+// ── CLOUD SETTINGS SYNC ──────────────────────────────────────
+var APPS_URL = "https://script.google.com/macros/s/AKfycbzZ3dUb2t71Kxd0uOq4rCh775y-8evrcKKWYjnN4ehnSm524Gd2C3hp3lShKjUD0ZlRzw/exec";
+
+function saveSettingsToCloud(type, data){
+  var params = new URLSearchParams();
+  params.append("payload", JSON.stringify({
+    action: "saveSettings",
+    type: type,
+    data: data
+  }));
+  fetch(APPS_URL, {method:"POST", body:params})
+    .then(function(r){ return r.text(); })
+    .then(function(t){ console.log("Settings saved to cloud:", t); })
+    .catch(function(e){ console.log("Cloud save error:", e); });
+  // Also save locally as cache
+  localStorage.setItem("btpl_" + type, JSON.stringify(data));
+}
+
+function loadSettingsFromCloud(){
+  var params = new URLSearchParams();
+  params.append("payload", JSON.stringify({ action: "loadSettings" }));
+  fetch(APPS_URL, {method:"POST", body:params})
+    .then(function(r){ return r.json(); })
+    .then(function(result){
+      if(result.status === "success"){
+        if(result.users)     localStorage.setItem("btpl_users",     JSON.stringify(result.users));
+        if(result.customers) localStorage.setItem("btpl_customers", JSON.stringify(result.customers));
+        console.log("Settings loaded from cloud!");
+        rebuildCustomerDropdown();
+      }
+    })
+    .catch(function(e){ console.log("Cloud load error:", e); });
+}
+
 function getCombinedUsers(){
   try {
     const extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
@@ -11241,7 +11275,7 @@ function saveEditUser(){
   var oldData  = allUsers[oldKey] || {};
   if(username !== oldKey && !USERS[oldKey]) delete extra[oldKey];
   extra[username] = { display:display, role:role, password:password || oldData.password || "" };
-  localStorage.setItem("btpl_users", JSON.stringify(extra));
+  saveSettingsToCloud("users", extra);
   closeEditUser();
   showToast("User updated!", false);
   renderUsersList();
@@ -11254,7 +11288,7 @@ function addNewUser(){
   if(!name||!username||!password){ showToast("Fill all fields!",true); return; }
   var extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
   extra[username] = { display:name, password:password, role:role };
-  localStorage.setItem("btpl_users", JSON.stringify(extra));
+  saveSettingsToCloud("users", extra);
   document.getElementById("newUserName").value="";
   document.getElementById("newUserUsername").value="";
   document.getElementById("newUserPass").value="";
@@ -11265,7 +11299,7 @@ function deleteUser(username){
   if(!confirm("Delete user " + username + "?")) return;
   var extra = JSON.parse(localStorage.getItem("btpl_users")||"{}");
   delete extra[username];
-  localStorage.setItem("btpl_users", JSON.stringify(extra));
+  saveSettingsToCloud("users", extra);
   showToast("User deleted", false);
   renderUsersList();
 }
@@ -11314,7 +11348,7 @@ function addNewCustomer(){
   if(!name){ showToast("Enter customer name!", true); return; }
   var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
   if(!extra[name]) extra[name] = { models:["Other"], parts:["Other"] };
-  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  saveSettingsToCloud("customers", extra);
   document.getElementById("newCustName").value="";
   showToast("Customer " + name + " added!", false);
   renderCustomersList();
@@ -11671,6 +11705,8 @@ function saveDriveLog(filename, url){
 }
 
 function showApp(username, role){
+  // Load latest settings from cloud
+  loadSettingsFromCloud();
   try {
     const allUsers = getCombinedUsers();
     // Save session
