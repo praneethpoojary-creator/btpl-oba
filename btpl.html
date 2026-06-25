@@ -11710,7 +11710,9 @@ function saveDriveLog(filename, url){
 
 function showApp(username, role){
   // Load latest settings from cloud
-  loadSettingsFromCloud();
+  loadSettingsFromCloud(false);
+  // Auto sync every 30 seconds
+  setInterval(function(){ loadSettingsFromCloud(false); }, 30000);
   try {
     const allUsers = getCombinedUsers();
     // Save session
