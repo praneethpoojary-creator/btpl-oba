@@ -11116,7 +11116,7 @@ function saveSettingsToCloud(type, data){
   localStorage.setItem("btpl_" + type, JSON.stringify(data));
 }
 
-function loadSettingsFromCloud(){
+function loadSettingsFromCloud(showMsg){
   var params = new URLSearchParams();
   params.append("payload", JSON.stringify({ action: "loadSettings" }));
   fetch(APPS_URL, {method:"POST", body:params})
@@ -11125,11 +11125,15 @@ function loadSettingsFromCloud(){
       if(result.status === "success"){
         if(result.users)     localStorage.setItem("btpl_users",     JSON.stringify(result.users));
         if(result.customers) localStorage.setItem("btpl_customers", JSON.stringify(result.customers));
-        console.log("Settings loaded from cloud!");
         rebuildCustomerDropdown();
+        if(showMsg) window.showToast("Settings refreshed!", false);
+        console.log("Settings loaded from cloud!");
       }
     })
-    .catch(function(e){ console.log("Cloud load error:", e); });
+    .catch(function(e){ 
+      console.log("Cloud load error:", e); 
+      if(showMsg) window.showToast("Could not load settings!", true);
+    });
 }
 
 function getCombinedUsers(){
