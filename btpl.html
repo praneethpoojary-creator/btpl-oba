@@ -11362,7 +11362,7 @@ function deleteCustomer(name){
   if(!confirm("Delete customer " + name + "?")) return;
   var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
   delete extra[name];
-  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  saveSettingsToCloud("customers", extra);
   showToast("Customer deleted", false);
   renderCustomersList();
   rebuildCustomerDropdown();
@@ -11391,7 +11391,7 @@ function saveEditCustName(){
   var data    = allCust[oldName] || { models:["Other"], parts:[] };
   extra[newName] = { models: data.models.slice(), parts: data.parts.slice() };
   if(extra[oldName]) delete extra[oldName];
-  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  saveSettingsToCloud("customers", extra);
   document.getElementById("editCustKey").value = newName;
   document.getElementById("editCustTitle").textContent = newName;
   showToast("Customer renamed!", false);
@@ -11440,7 +11440,7 @@ function editPart(cname, idx, oldPart){
   getEditableParts(cname);
   var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
   extra[cname].parts[idx] = newPart.trim();
-  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  saveSettingsToCloud("customers", extra);
   showToast("Part updated!", false);
   openEditCust(cname);
 }
@@ -11449,7 +11449,7 @@ function deletePart(cname, idx){
   getEditableParts(cname);
   var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
   extra[cname].parts.splice(idx,1);
-  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  saveSettingsToCloud("customers", extra);
   showToast("Part deleted!", false);
   openEditCust(cname);
 }
@@ -11460,7 +11460,7 @@ function addPartFromModal(){
   getEditableParts(cname);
   var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
   extra[cname].parts.unshift(newPart);
-  localStorage.setItem("btpl_customers", JSON.stringify(extra));
+  saveSettingsToCloud("customers", extra);
   document.getElementById("newPartInput").value = "";
   showToast("Part added!", false);
   openEditCust(cname);
