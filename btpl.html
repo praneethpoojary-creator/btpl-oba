@@ -11126,6 +11126,46 @@ function openAdminPanel(){
   document.getElementById("adminPanel").style.display="block";
   adminTab("users");
 }
+
+function exportAdminData(){
+  var data = {
+    users: JSON.parse(localStorage.getItem("btpl_users")||"{}"),
+    customers: JSON.parse(localStorage.getItem("btpl_customers")||"{}")
+  };
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], {type:"application/json"});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement("a");
+  a.href   = url;
+  a.download = "btpl_admin_settings.json";
+  a.click();
+  URL.revokeObjectURL(url);
+  window.showToast("Settings exported!", false);
+}
+
+function importAdminData(){
+  var input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json";
+  input.onchange = function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        var data = JSON.parse(ev.target.result);
+        if(data.users)     localStorage.setItem("btpl_users",     JSON.stringify(data.users));
+        if(data.customers) localStorage.setItem("btpl_customers", JSON.stringify(data.customers));
+        window.showToast("Settings imported! Refreshing...", false);
+        setTimeout(function(){ location.reload(); }, 1500);
+      } catch(err){
+        window.showToast("Invalid file!", true);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
 function closeAdminPanel(){
   document.getElementById("adminPanel").style.display="none";
 }
