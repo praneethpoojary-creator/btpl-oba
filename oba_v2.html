@@ -11109,8 +11109,11 @@ function saveSettingsToCloud(type, data){
     data: data
   }));
   fetch(APPS_URL, {method:"POST", body:params})
-    .then(function(r){ return r.text(); })
-    .then(function(t){ console.log("Settings saved to cloud:", t); })
+    .then(function(r){ return r.json(); })
+    .then(function(t){ 
+      console.log("Settings saved to cloud:", t);
+      if(t.status === "success") window.showToast("Changes saved & synced!", false);
+    })
     .catch(function(e){ console.log("Cloud save error:", e); });
   // Also save locally as cache
   localStorage.setItem("btpl_" + type, JSON.stringify(data));
@@ -11123,16 +11126,24 @@ function loadSettingsFromCloud(showMsg){
     .then(function(r){ return r.json(); })
     .then(function(result){
       if(result.status === "success"){
-        if(result.users)     localStorage.setItem("btpl_users",     JSON.stringify(result.users));
-        if(result.customers) localStorage.setItem("btpl_customers", JSON.stringify(result.customers));
-        rebuildCustomerDropdown();
-        if(showMsg) window.showToast("Settings refreshed!", false);
-        console.log("Settings loaded from cloud!");
+        var changed = false;
+        if(result.users){
+          localStorage.setItem("btpl_users", JSON.stringify(result.users));
+          changed = true;
+        }
+        if(result.customers){
+          localStorage.setItem("btpl_customers", JSON.stringify(result.customers));
+          changed = true;
+        }
+        if(changed){
+          rebuildCustomerDropdown();
+          if(showMsg) window.showToast("Settings synced!", false);
+        }
+        console.log("Cloud sync done!", result);
       }
     })
     .catch(function(e){ 
       console.log("Cloud load error:", e); 
-      if(showMsg) window.showToast("Could not load settings!", true);
     });
 }
 
