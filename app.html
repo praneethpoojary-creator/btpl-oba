@@ -11136,7 +11136,16 @@ function loadSettingsFromCloud(showMsg){
           changed = true;
         }
         if(changed){
-          rebuildCustomerDropdown();
+          // Only rebuild dropdown - preserve current form values
+          var custSel = document.getElementById("customerSelect");
+          var currentCust = custSel ? custSel.value : "";
+          if(!currentCust || currentCust === "") {
+            // Form is empty - safe to rebuild
+            rebuildCustomerDropdown();
+          } else {
+            // Form is being filled - just update the dropdown options silently
+            rebuildCustomerDropdown();
+          }
           if(showMsg) window.showToast("Settings synced!", false);
         }
         console.log("Cloud sync done!", result);
@@ -11478,7 +11487,13 @@ function addPartFromModal(){
 }
 function rebuildCustomerDropdown(){
   var sel     = document.getElementById("customerSelect");
-  var current = sel.value;
+  var current = sel ? sel.value : "";
+  // Save all current form values before rebuild
+  var partSel   = document.getElementById("partSelect");
+  var currentPart = partSel ? partSel.value : "";
+  var modelVal  = document.getElementById("modelName") ? document.getElementById("modelName").value : "";
+
+  if(!sel) return;
   while(sel.options.length > 1) sel.remove(1);
   var allCust = getCombinedCustomerData();
   Object.keys(allCust).forEach(function(name){
@@ -11489,8 +11504,24 @@ function rebuildCustomerDropdown(){
   var other = document.createElement("option");
   other.value = "__other__"; other.textContent = "Other (type below)";
   sel.appendChild(other);
+
+  // Restore selection without triggering change
   sel.value = current;
-  if(current && current !== "__other__") onCustomerChange();
+
+  // Restore part number if customer is selected
+  if(current && current !== "__other__" && current !== ""){
+    // Rebuild parts dropdown silently
+    onCustomerChange();
+    // Restore part selection after rebuild
+    setTimeout(function(){
+      if(partSel && currentPart){
+        partSel.value = currentPart;
+      }
+      // Restore model name
+      var mEl = document.getElementById("modelName");
+      if(mEl && modelVal) mEl.value = modelVal;
+    }, 100);
+  }
 }
 
 // -- BARCODE SCANNER ------------------------------------------
