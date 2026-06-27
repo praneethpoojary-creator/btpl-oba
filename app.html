@@ -12432,8 +12432,12 @@ function buildPDFDoc(){
     const bv=(document.getElementById("bc"+(i+1))||{}).value||"";
     if(bv){
       FR(sx+0.5,y+thA+0.5,sW-1,thB-1,[255,255,255],LGRY);
-      const d=bv.length>Math.floor((sW-1)/1.8)?bv.substring(0,Math.floor((sW-1)/1.8)-1)+"...":bv;
-      T(d,sx+sW/2,y+thA+thB/2+2,5.5,[0,100,0],true,"center");
+      // Show full barcode - reduce font size if long
+      var bcFont = bv.length > 12 ? 4.5 : bv.length > 9 ? 5 : 5.5;
+      doc.setFontSize(bcFont);
+      doc.setTextColor(0,100,0);
+      doc.setFont("helvetica","bold");
+      doc.text(bv, sx+sW/2, y+thA+thB/2+2, {align:"center", maxWidth: sW-1});
     }
   }
   y+=thH;
