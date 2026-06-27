@@ -11559,14 +11559,20 @@ function startScanner(){
     scannerStream = stream;
     video.srcObject = stream;
     video.play().then(function(){
-      // After play starts, try single-shot focus to lock on barcode
       var track2 = stream.getVideoTracks()[0];
-      try{
-        track2.applyConstraints({advanced:[{focusMode:"single-shot"}]});
-        setTimeout(function(){
-          try{ track2.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
-        },500);
-      }catch(e){}
+      var caps2  = track2.getCapabilities ? track2.getCapabilities() : {};
+      // OnePlus/Android best focus settings
+      var adv = [];
+      if(caps2.focusMode){
+        if(caps2.focusMode.indexOf("continuous") >= 0)
+          adv.push({focusMode:"continuous"});
+      }
+      if(caps2.exposureMode && caps2.exposureMode.indexOf("continuous") >= 0)
+        adv.push({exposureMode:"continuous"});
+      if(caps2.whiteBalanceMode && caps2.whiteBalanceMode.indexOf("continuous") >= 0)
+        adv.push({whiteBalanceMode:"continuous"});
+      if(adv.length > 0)
+        try{ track2.applyConstraints({advanced: adv}); }catch(e){}
     }).catch(function(){});
     var track = stream.getVideoTracks()[0];
     var caps = track.getCapabilities ? track.getCapabilities() : {};
@@ -11579,19 +11585,37 @@ function startScanner(){
       constraints.advanced.push({ zoom: 1.5 });
     if(constraints.advanced.length > 0)
       try{ track.applyConstraints(constraints); }catch(e){}
-    video.ontouchend = function(e){
-      var touch = e.changedTouches[0];
-      var ring  = document.getElementById("tapFocusRing");
+    video.onclick = video.ontouchend = function(e){
+      var clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX) || 0;
+      var clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY) || 0;
+      var ring = document.getElementById("tapFocusRing");
       if(ring){
-        ring.style.left = touch.clientX+"px";
-        ring.style.top  = touch.clientY+"px";
+        ring.style.left = clientX+"px";
+        ring.style.top  = clientY+"px";
         ring.style.display="block"; ring.style.opacity="1";
         setTimeout(function(){ ring.style.opacity="0"; setTimeout(function(){ ring.style.display="none"; },300); },700);
       }
+      var rect = video.getBoundingClientRect();
+      var x = (clientX - rect.left) / rect.width;
+      var y = (clientY - rect.top)  / rect.height;
+      x = Math.max(0, Math.min(1, x));
+      y = Math.max(0, Math.min(1, y));
+      // Try pointOfInterest focus (works on OnePlus Chrome)
       try{
-        var rect=video.getBoundingClientRect();
-        track.applyConstraints({advanced:[{focusMode:"single-shot",pointOfInterest:{x:(touch.clientX-rect.left)/rect.width,y:(touch.clientY-rect.top)/rect.height}}]});
-        setTimeout(function(){ try{track.applyConstraints({advanced:[{focusMode:"continuous"}]});}catch(e){}; },1500);
+        track.applyConstraints({advanced:[{
+          focusMode: "single-shot",
+          pointOfInterest: {x: x, y: y}
+        }]}).then(function(){
+          setTimeout(function(){
+            try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
+          }, 2000);
+        }).catch(function(){
+          // Fallback: toggle focus mode
+          try{ track.applyConstraints({advanced:[{focusMode:"single-shot"}]}); }catch(e){}
+          setTimeout(function(){
+            try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
+          }, 1500);
+        });
       }catch(e){}
     };
     var canvas = document.createElement("canvas");
