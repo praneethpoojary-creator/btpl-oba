@@ -11474,14 +11474,18 @@ function deletePart(cname, idx){
   openEditCust(cname);
 }
 function addPartFromModal(){
-  var cname   = document.getElementById("editCustKey").value;
-  var newPart = document.getElementById("newPartInput").value.trim();
+  var cname    = document.getElementById("editCustKey").value;
+  var newPart  = document.getElementById("newPartInput").value.trim();
+  var newModel = document.getElementById("newModelInput") ? document.getElementById("newModelInput").value.trim() : "";
   if(!newPart){ showToast("Enter part number!",true); return; }
+  // Save as "PartNo  -  ModelName" format so model auto-fills
+  var partEntry = newModel ? (newPart + "  -  " + newModel) : newPart;
   getEditableParts(cname);
   var extra = JSON.parse(localStorage.getItem("btpl_customers")||"{}");
-  extra[cname].parts.unshift(newPart);
+  extra[cname].parts.unshift(partEntry);
   saveSettingsToCloud("customers", extra);
   document.getElementById("newPartInput").value = "";
+  if(document.getElementById("newModelInput")) document.getElementById("newModelInput").value = "";
   showToast("Part added!", false);
   openEditCust(cname);
 }
