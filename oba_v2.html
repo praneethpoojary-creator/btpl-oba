@@ -10929,9 +10929,10 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
       </div>
       <div style="margin-bottom:8px;font-size:12px;font-weight:700;color:#555;">Part Numbers</div>
       <div id="editPartsList" style="max-height:250px;overflow-y:auto;margin-bottom:10px;border:1px solid #e2e8f0;border-radius:6px;"></div>
-      <div style="display:flex;gap:8px;">
-        <input type="text" id="newPartInput" placeholder="Add part: PART-001 - Description" style="flex:1;border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:12px;outline:none;">
-        <button onclick="addPartFromModal()" style="background:#16a34a;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">+ Add</button>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <input type="text" id="newPartInput" placeholder="Part Number (e.g. 2000167A1-V6)" style="border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:12px;outline:none;">
+        <input type="text" id="newModelInput" placeholder="Model Name (e.g. ATOM 1.0 AD DISP PCB)" style="border:1.5px solid #ddd;border-radius:6px;padding:8px 10px;font-size:12px;outline:none;">
+        <button onclick="addPartFromModal()" style="background:#16a34a;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">+ Add Part</button>
       </div>
       <button onclick="closeEditCust()" style="width:100%;margin-top:12px;background:#1a3a6b;color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">&#10004; Save &amp; Close</button>
     </div>
