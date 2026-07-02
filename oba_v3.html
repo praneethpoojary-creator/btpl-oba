@@ -12152,14 +12152,15 @@ function buildTable(n) {
     <th style="width:75px;" rowspan="2">REMARKS</th>
   </tr><tr>`;
   for(let i=1;i<=n;i++){
+    const isCompact = n >= 8;
     h+=`<th style="width:${sw}px;padding:2px;vertical-align:top;">
-      <div style="font-weight:700;font-size:10px;margin-bottom:2px;">Sample ${i} :</div>
-      <div style="display:flex;gap:2px;align-items:center;">
-        <input class="bc-inp" id="bc${i}" type="text" placeholder="Tap 📷 to scan..."
+      <div style="font-weight:700;font-size:${isCompact?'8':'10'}px;margin-bottom:1px;">S${i}:</div>
+      <div style="display:flex;flex-direction:${isCompact?'column':'row'};gap:2px;align-items:${isCompact?'stretch':'center'};">
+        <input class="bc-inp" id="bc${i}" type="text" placeholder="${isCompact?'Scan...':'Tap 📷 to scan...'}"
           oninput="this.classList.toggle('ok',this.value.trim().length>0)"
           autocomplete="off" spellcheck="false"
           inputmode="text"
-          style="flex:1;border:1px solid #ccc;border-radius:2px;font-family:monospace;font-size:9px;padding:2px;text-align:center;background:#fff;">
+          style="flex:1;border:1px solid #ccc;border-radius:2px;font-family:monospace;font-size:${isCompact?'8':'9'}px;padding:${isCompact?'1':'2'}px;text-align:center;background:#fff;min-width:0;">
         <button onclick="openScanner('bc${i}','Sample ${i}')"
           style="background:#1a3a6b;color:#fff;border:none;border-radius:2px;padding:2px 4px;font-size:10px;cursor:pointer;flex-shrink:0;"
           title="Scan barcode">📷</button>
