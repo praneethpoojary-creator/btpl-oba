@@ -10787,8 +10787,8 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
   </div>
 
   <!-- THE TABLE -->
-  <div class="xtable-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
-    <table class="xtable" id="xtable" style="min-width:max-content;">
+  <div class="xtable-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #ddd;border-radius:8px;">
+    <table class="xtable" id="xtable" style="min-width:max-content;table-layout:fixed;">
       <thead id="xhead"></thead>
       <tbody id="xbody"></tbody>
     </table>
@@ -12090,12 +12090,12 @@ function onPartChange(){
 function buildTable(n) {
   const head = document.getElementById("xhead");
   const body = document.getElementById("xbody");
-  const sw = n >= 8 ? 62 : Math.max(58, Math.floor(570/n));
+  const sw = 90;  // Fixed 90px per sample - easy to tap and scroll
 
   // Header: SL NO | Checkpoints | Sample labels + barcode input | REMARKS
   let h = `<tr>
-    <th style="width:40px;" rowspan="2">SL NO.</th>
-    <th style="width:210px;text-align:left;padding-left:6px;" rowspan="2">Check points</th>
+    <th style="width:35px;min-width:35px;position:sticky;left:0;z-index:3;background:#1a3a6b;" rowspan="2">SL</th>
+    <th style="width:160px;min-width:160px;text-align:left;padding-left:6px;position:sticky;left:0;z-index:3;background:#1a3a6b;" rowspan="2">Check points</th>
     <th colspan="${n}">OK / NOT OK</th>
     <th style="width:75px;" rowspan="2">REMARKS</th>
   </tr><tr>`;
@@ -12121,8 +12121,8 @@ function buildTable(n) {
 
   CPS.forEach((cp,ri)=>{
     rows+=`<tr>
-      <td class="cp-sl white">${ri+1}.0</td>
-      <td class="cp-text white">${cp}</td>`;
+      <td class="cp-sl white" style="position:sticky;left:0;z-index:2;background:#fff;border-right:2px solid #ddd;">${ri+1}</td>
+      <td class="cp-text white" style="position:sticky;left:35px;z-index:2;background:#fff;min-width:160px;max-width:160px;border-right:2px solid #ddd;">${cp}</td>`;
     for(let s=1;s<=n;s++){
       rows+=`<td class="white" style="padding:2px;">
         <div class="okgrp">
