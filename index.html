@@ -11536,14 +11536,23 @@ var scannerRAF      = null;
 
 function openScanner(inputId, label){
   scannerTargetId = inputId;
+  // Directly trigger photo capture - best focus on OnePlus/Redmi
+  var photoInput = document.createElement("input");
+  photoInput.type = "file";
+  photoInput.accept = "image/*";
+  photoInput.capture = "environment";
+  photoInput.onchange = function(){ scanFromPhoto(this); };
+  photoInput.click();
+  
+  // Also show modal as fallback
   var labelEl = document.getElementById("scannerLabel");
   var modal   = document.getElementById("scannerModal");
   var status  = document.getElementById("scannerStatus");
   var manual  = document.getElementById("manualBarcode");
-  if(!modal){ alert("Scanner not ready"); return; }
+  if(!modal) return;
   if(labelEl) labelEl.textContent = label;
   if(manual)  manual.value = "";
-  if(status)  status.textContent = "Starting camera...";
+  if(status)  status.textContent = "Or use live camera below...";
   modal.classList.add("active");
   modal.style.display = "flex";
   startScanner();
