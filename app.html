@@ -11597,19 +11597,17 @@ function startScanner(){
 
     if(status) status.textContent = "Hold steady - auto focusing...";
 
-    // Auto focus every 2 seconds - works on OnePlus/Redmi
-    var focusInterval = setInterval(function(){
-      if(!scannerStream){ clearInterval(focusInterval); return; }
+    // Auto focus every 2 seconds
+    var focusTimer = setInterval(function(){
+      if(!scannerStream){ clearInterval(focusTimer); return; }
       try{
         track.applyConstraints({advanced:[{focusMode:"single-shot"}]});
         setTimeout(function(){
           try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
-        }, 500);
+        }, 600);
       }catch(e){}
     }, 2000);
-    
-    // Store interval to clear on close
-    window._focusInterval = focusInterval;
+    window._focusTimer = focusTimer;
 
     // Torch button
     var torchBtn = document.getElementById("torchBtn");
@@ -11724,7 +11722,6 @@ function onBarcodeFound(val){
 }
 
 function closeScanner(){
-  if(window._focusInterval){ clearInterval(window._focusInterval); window._focusInterval=null; }
   if(scannerRAF){ cancelAnimationFrame(scannerRAF); scannerRAF=null; }
   if(scannerStream){ scannerStream.getTracks().forEach(function(t){t.stop();}); scannerStream=null; }
   var v = document.getElementById("scannerVideo");
