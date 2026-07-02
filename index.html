@@ -11553,69 +11553,86 @@ function startScanner(){
   var video  = document.getElementById("scannerVideo");
   var status = document.getElementById("scannerStatus");
   if(!video) return;
-  // High resolution for Code 128 barcode scanning
-  navigator.mediaDevices.getUserMedia({
+
+  // Try best constraints for OnePlus/Redmi
+  var constraints = {
     video: {
-      facingMode: "environment",
-      width:  { ideal: 1920, min: 1280 },
-      height: { ideal: 1080, min: 720 }
+      facingMode: { ideal: "environment" },
+      width:      { ideal: 1920, min: 1280 },
+      height:     { ideal: 1080, min: 720 },
+      focusMode:  { ideal: "continuous" },
+      zoom:       { ideal: 2.0 }
     }
-  }).then(function(stream){
+  };
+
+  navigator.mediaDevices.getUserMedia(constraints)
+  .catch(function(){
+    // Fallback basic
+    return navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+  })
+  .then(function(stream){
     scannerStream = stream;
     video.srcObject = stream;
-    video.play().then(function(){
-      var track2 = stream.getVideoTracks()[0];
-      var caps2  = track2.getCapabilities ? track2.getCapabilities() : {};
-      // OnePlus/Android best focus settings
-      var adv = [];
-      if(caps2.focusMode){
-        if(caps2.focusMode.indexOf("continuous") >= 0)
-          adv.push({focusMode:"continuous"});
-      }
-      if(caps2.exposureMode && caps2.exposureMode.indexOf("continuous") >= 0)
-        adv.push({exposureMode:"continuous"});
-      if(caps2.whiteBalanceMode && caps2.whiteBalanceMode.indexOf("continuous") >= 0)
-        adv.push({whiteBalanceMode:"continuous"});
-      if(adv.length > 0)
-        try{ track2.applyConstraints({advanced: adv}); }catch(e){}
-    }).catch(function(){});
+    video.play();
+
     var track = stream.getVideoTracks()[0];
-    var caps = track.getCapabilities ? track.getCapabilities() : {};
-    // Apply best focus settings
-    var constraints = { advanced: [] };
+    var caps  = track.getCapabilities ? track.getCapabilities() : {};
+
+    // Apply best settings for OnePlus/Redmi
+    var adv = [];
     if(caps.focusMode && caps.focusMode.indexOf("continuous") >= 0)
-      constraints.advanced.push({ focusMode: "continuous" });
-    // Try to zoom in slightly for better barcode detail
-    if(caps.zoom && caps.zoom.max >= 1.5)
-      constraints.advanced.push({ zoom: 1.5 });
-    if(constraints.advanced.length > 0)
-      try{ track.applyConstraints(constraints); }catch(e){}
+      adv.push({focusMode: "continuous"});
+    if(caps.exposureMode && caps.exposureMode.indexOf("continuous") >= 0)
+      adv.push({exposureMode: "continuous"});
+    if(caps.whiteBalanceMode && caps.whiteBalanceMode.indexOf("continuous") >= 0)
+      adv.push({whiteBalanceMode: "continuous"});
+    if(caps.zoom && caps.zoom.max >= 2.0)
+      adv.push({zoom: 2.0});
+    else if(caps.zoom && caps.zoom.max >= 1.5)
+      adv.push({zoom: 1.5});
+    if(adv.length > 0)
+      try{ track.applyConstraints({advanced: adv}); }catch(e){}
+
+    if(status) status.textContent = "Tap on barcode to focus";
+
+    // Torch button
+    var torchBtn = document.getElementById("torchBtn");
+    if(torchBtn && caps.torch){
+      torchBtn.style.display = "inline-block";
+      var torchOn = false;
+      torchBtn.onclick = function(){
+        torchOn = !torchOn;
+        try{ track.applyConstraints({advanced:[{torch: torchOn}]}); }catch(e){}
+        torchBtn.textContent = torchOn ? "🔦 OFF" : "🔦 ON";
+      };
+    }
+
+    // Tap to focus - works on OnePlus & Redmi
     video.onclick = video.ontouchend = function(e){
+      e.preventDefault();
       var clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX) || 0;
       var clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY) || 0;
       var ring = document.getElementById("tapFocusRing");
       if(ring){
         ring.style.left = clientX+"px";
         ring.style.top  = clientY+"px";
-        ring.style.display="block"; ring.style.opacity="1";
-        setTimeout(function(){ ring.style.opacity="0"; setTimeout(function(){ ring.style.display="none"; },300); },700);
+        ring.style.display = "block";
+        ring.style.opacity = "1";
+        setTimeout(function(){ ring.style.opacity="0"; setTimeout(function(){ ring.style.display="none"; },300); }, 800);
       }
       var rect = video.getBoundingClientRect();
-      var x = (clientX - rect.left) / rect.width;
-      var y = (clientY - rect.top)  / rect.height;
-      x = Math.max(0, Math.min(1, x));
-      y = Math.max(0, Math.min(1, y));
-      // Try pointOfInterest focus (works on OnePlus Chrome)
+      var x = Math.max(0, Math.min(1, (clientX-rect.left)/rect.width));
+      var y = Math.max(0, Math.min(1, (clientY-rect.top)/rect.height));
+      // Single shot focus at tap point
       try{
-        track.applyConstraints({advanced:[{
-          focusMode: "single-shot",
-          pointOfInterest: {x: x, y: y}
-        }]}).then(function(){
+        track.applyConstraints({advanced:[{focusMode:"single-shot", pointOfInterest:{x:x, y:y}}]})
+        .then(function(){
           setTimeout(function(){
             try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
           }, 2000);
         }).catch(function(){
-          // Fallback: toggle focus mode
           try{ track.applyConstraints({advanced:[{focusMode:"single-shot"}]}); }catch(e){}
           setTimeout(function(){
             try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
@@ -11623,30 +11640,31 @@ function startScanner(){
         });
       }catch(e){}
     };
-    var canvas = document.createElement("canvas");
-    var ctx    = canvas.getContext("2d", {willReadFrequently:true});
+
+    // Scan loop
+    var canvas   = document.createElement("canvas");
+    var ctx      = canvas.getContext("2d", {willReadFrequently:true});
+    var scanning = false;
 
     if("BarcodeDetector" in window){
-      var detector = new BarcodeDetector({formats:["code_128","code_39","code_93","ean_13","ean_8","upc_a","upc_e","qr_code","data_matrix","itf","codabar"]});
-      if(status) status.textContent = "Tap barcode to focus - Hold steady";
-      var scanning = false;
+      var detector = new BarcodeDetector({
+        formats:["code_128","code_39","code_93","ean_13","ean_8",
+                 "upc_a","upc_e","qr_code","data_matrix","itf","codabar"]
+      });
       var detect = function(){
         if(!scannerStream) return;
         if(scanning){ scannerRAF = requestAnimationFrame(detect); return; }
         if(video.readyState === video.HAVE_ENOUGH_DATA){
-          // Use smaller canvas for faster processing
-          var scale = 0.75;
-          canvas.width  = video.videoWidth  * scale;
-          canvas.height = video.videoHeight * scale;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.width  = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
           scanning = true;
-          // Try BarcodeDetector
           detector.detect(canvas).then(function(codes){
             scanning = false;
             if(codes.length > 0){
               onBarcodeFound(codes[0].rawValue);
             } else {
-              // jsQR fallback - good for Code128
+              // jsQR fallback
               if(typeof jsQR !== "undefined"){
                 var img  = ctx.getImageData(0,0,canvas.width,canvas.height);
                 var code = jsQR(img.data, img.width, img.height, {inversionAttempts:"attemptBoth"});
@@ -11654,17 +11672,13 @@ function startScanner(){
               }
               scannerRAF = requestAnimationFrame(detect);
             }
-          }).catch(function(){
-            scanning = false;
-            scannerRAF = requestAnimationFrame(detect);
-          });
+          }).catch(function(){ scanning=false; scannerRAF = requestAnimationFrame(detect); });
         } else {
           scannerRAF = requestAnimationFrame(detect);
         }
       };
       scannerRAF = requestAnimationFrame(detect);
     } else {
-      if(status) status.textContent = "Tap barcode to focus - Hold steady";
       var detect2 = function(){
         if(!scannerStream) return;
         if(video.readyState === video.HAVE_ENOUGH_DATA){
@@ -11673,7 +11687,7 @@ function startScanner(){
           ctx.drawImage(video, 0, 0);
           if(typeof jsQR !== "undefined"){
             var img  = ctx.getImageData(0,0,canvas.width,canvas.height);
-            var code = jsQR(img.data,img.width,img.height,{inversionAttempts:"attemptBoth"});
+            var code = jsQR(img.data, img.width, img.height, {inversionAttempts:"attemptBoth"});
             if(code){ onBarcodeFound(code.data); return; }
           }
         }
@@ -11682,76 +11696,10 @@ function startScanner(){
       scannerRAF = requestAnimationFrame(detect2);
     }
   }).catch(function(err){
-    if(status) status.textContent = "Camera error - type barcode below";
-    var manual = document.getElementById("manualBarcode");
-    if(manual) manual.focus();
+    if(status) status.textContent = "Camera error - use 📸 Take Photo below";
   });
 }
 
-function scanFromPhoto(input){
-  if(!input.files || !input.files[0]) return;
-  var file = input.files[0];
-  var status = document.getElementById("scannerStatus");
-  if(status) status.textContent = "Processing photo...";
-  var img = new Image();
-  var url = URL.createObjectURL(file);
-  img.onload = function(){
-    // Try multiple canvas sizes for best detection
-    var sizes = [1.0, 1.5, 2.0, 0.75];
-    var found = false;
-
-    function trySize(idx){
-      if(idx >= sizes.length || found) {
-        if(!found){
-          if(status) status.textContent = "Could not read - type manually below";
-        }
-        return;
-      }
-      var scale  = sizes[idx];
-      var canvas = document.createElement("canvas");
-      canvas.width  = img.width  * scale;
-      canvas.height = img.height * scale;
-      var ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      if("BarcodeDetector" in window){
-        var detector = new BarcodeDetector({formats:["code_128","code_39","code_93","ean_13","ean_8","upc_a","upc_e","qr_code","data_matrix","itf","codabar"]});
-        detector.detect(canvas).then(function(codes){
-          if(codes.length > 0 && !found){
-            found = true;
-            URL.revokeObjectURL(url);
-            onBarcodeFound(codes[0].rawValue);
-          } else {
-            // Try jsQR
-            if(typeof jsQR !== "undefined"){
-              var imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
-              var code = jsQR(imgData.data, imgData.width, imgData.height, {inversionAttempts:"attemptBoth"});
-              if(code && !found){
-                found = true;
-                URL.revokeObjectURL(url);
-                onBarcodeFound(code.data);
-                return;
-              }
-            }
-            trySize(idx+1);
-          }
-        }).catch(function(){ trySize(idx+1); });
-      } else if(typeof jsQR !== "undefined"){
-        var imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
-        var code = jsQR(imgData.data, imgData.width, imgData.height, {inversionAttempts:"attemptBoth"});
-        if(code && !found){
-          found = true;
-          URL.revokeObjectURL(url);
-          onBarcodeFound(code.data);
-        } else { trySize(idx+1); }
-      } else { trySize(idx+1); }
-    }
-    trySize(0);
-    input.value = "";
-  };
-  img.onerror = function(){ if(status) status.textContent = "Photo error - try again"; };
-  img.src = url;
-}
 
 function onBarcodeFound(val){
   if(!val || !scannerTargetId) return;
