@@ -10592,8 +10592,8 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
   .xform { margin: 8px 6px; }
 
   /* Table — horizontal scroll on mobile */
-  .xtable-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .xtable { min-width: 600px; }
+  .xtable-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; display: block; }
+  .xtable { min-width: max-content; }
   .xtable th, .xtable td { font-size: 9px; padding: 3px 2px; }
 
   /* Barcode inputs smaller on mobile */
@@ -10787,7 +10787,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
   </div>
 
   <!-- THE TABLE -->
-  <div class="xtable-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #ddd;border-radius:8px;">
+  <div class="xtable-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #ddd;border-radius:8px;width:100%;display:block;">
     <table class="xtable" id="xtable" style="min-width:max-content;table-layout:fixed;">
       <thead id="xhead"></thead>
       <tbody id="xbody"></tbody>
@@ -12090,7 +12090,7 @@ function onPartChange(){
 function buildTable(n) {
   const head = document.getElementById("xhead");
   const body = document.getElementById("xbody");
-  const sw = 150;  // 150px per sample - wide barcode + easy OK/NOK
+  const sw = 160;  // 160px per sample - plenty of room
 
   // Header: SL NO | Checkpoints | Sample labels + barcode input | REMARKS
   let h = `<tr>
