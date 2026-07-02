@@ -11554,86 +11554,101 @@ function startScanner(){
   var status = document.getElementById("scannerStatus");
   if(!video) return;
 
-  // Try best constraints for OnePlus/Redmi
-  var constraints = {
+  // Step 1: Start with basic constraints
+  navigator.mediaDevices.getUserMedia({
     video: {
-      facingMode: { ideal: "environment" },
-      width:      { ideal: 1920, min: 1280 },
-      height:     { ideal: 1080, min: 720 },
-      focusMode:  { ideal: "continuous" },
-      zoom:       { ideal: 2.0 }
+      facingMode: { ideal:"environment" },
+      width:  { ideal:1920 },
+      height: { ideal:1080 }
     }
-  };
-
-  navigator.mediaDevices.getUserMedia(constraints)
+  })
   .catch(function(){
-    // Fallback basic
-    return navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" }
-    });
+    return navigator.mediaDevices.getUserMedia({ video: { facingMode:"environment" } });
   })
   .then(function(stream){
     scannerStream = stream;
     video.srcObject = stream;
-    video.play().then(function(){
-      // Use ImageCapture API for better focus - works on OnePlus/Redmi
-      var track2 = stream.getVideoTracks()[0];
-      if(typeof ImageCapture !== "undefined"){
-        var imageCapture = new ImageCapture(track2);
-        // Grab frame to force focus
-        var grabInterval = setInterval(function(){
-          if(!scannerStream){ clearInterval(grabInterval); return; }
-          imageCapture.grabFrame().catch(function(){});
-        }, 1000);
-        window._grabInterval = grabInterval;
-      }
-    }).catch(function(){});
+    video.setAttribute("playsinline", true);
+    video.play();
 
     var track = stream.getVideoTracks()[0];
-    var caps  = track.getCapabilities ? track.getCapabilities() : {};
 
-    // Apply best settings for OnePlus/Redmi
-    var adv = [];
-    if(caps.focusMode && caps.focusMode.indexOf("continuous") >= 0)
-      adv.push({focusMode: "continuous"});
-    if(caps.exposureMode && caps.exposureMode.indexOf("continuous") >= 0)
-      adv.push({exposureMode: "continuous"});
-    if(caps.whiteBalanceMode && caps.whiteBalanceMode.indexOf("continuous") >= 0)
-      adv.push({whiteBalanceMode: "continuous"});
-    if(caps.zoom && caps.zoom.max >= 2.0)
-      adv.push({zoom: 2.0});
-    else if(caps.zoom && caps.zoom.max >= 1.5)
-      adv.push({zoom: 1.5});
-    if(adv.length > 0)
-      try{ track.applyConstraints({advanced: adv}); }catch(e){}
-
-    if(status) status.textContent = "Hold steady - auto focusing...";
-
-    // Auto focus every 2 seconds
-    var focusTimer = setInterval(function(){
-      if(!scannerStream){ clearInterval(focusTimer); return; }
-      try{
-        track.applyConstraints({advanced:[{focusMode:"single-shot"}]});
-        setTimeout(function(){
-          try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
-        }, 600);
-      }catch(e){}
-    }, 2000);
-    window._focusTimer = focusTimer;
+    // Step 2: Apply focus after video starts playing
+    video.onloadedmetadata = function(){
+      var caps = track.getCapabilities ? track.getCapabilities() : {};
+      
+      function applyFocus(){
+        var adv = [];
+        // Force continuous autofocus
+        if(caps.focusMode){
+          if(caps.focusMode.indexOf("continuous") >= 0)
+            adv.push({focusMode:"continuous"});
+        }
+        // Exposure
+        if(caps.exposureMode && caps.exposureMode.indexOf("continuous") >= 0)
+          adv.push({exposureMode:"continuous"});
+        // White balance  
+        if(caps.whiteBalanceMode && caps.whiteBalanceMode.indexOf("continuous") >= 0)
+          adv.push({whiteBalanceMode:"continuous"});
+        // Zoom 1.5x for better barcode clarity
+        if(caps.zoom){
+          var z = Math.min(1.5, caps.zoom.max);
+          if(z > 1) adv.push({zoom: z});
+        }
+        if(adv.length > 0){
+          track.applyConstraints({advanced: adv})
+            .then(function(){ 
+              if(status) status.textContent = "Ready! Tap barcode to focus";
+            })
+            .catch(function(){ 
+              if(status) status.textContent = "Ready! Hold steady to scan";
+            });
+        } else {
+          if(status) status.textContent = "Ready! Hold steady to scan";
+        }
+      }
+      
+      // Apply focus after short delay
+      setTimeout(applyFocus, 500);
+      
+      // Re-apply focus every 3 seconds to maintain focus
+      var refocusTimer = setInterval(function(){
+        if(!scannerStream){ clearInterval(refocusTimer); return; }
+        var adv = [];
+        if(track.getCapabilities){
+          var caps2 = track.getCapabilities();
+          if(caps2.focusMode && caps2.focusMode.indexOf("single-shot") >= 0)
+            adv.push({focusMode:"single-shot"});
+        }
+        if(adv.length > 0){
+          track.applyConstraints({advanced:adv})
+            .then(function(){
+              setTimeout(function(){
+                if(!scannerStream) return;
+                try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
+              }, 800);
+            }).catch(function(){});
+        }
+      }, 3000);
+      window._refocusTimer = refocusTimer;
+    };
 
     // Torch button
     var torchBtn = document.getElementById("torchBtn");
-    if(torchBtn && caps.torch){
-      torchBtn.style.display = "inline-block";
-      var torchOn = false;
-      torchBtn.onclick = function(){
-        torchOn = !torchOn;
-        try{ track.applyConstraints({advanced:[{torch: torchOn}]}); }catch(e){}
-        torchBtn.textContent = torchOn ? "🔦 OFF" : "🔦 ON";
-      };
+    if(torchBtn){
+      var caps3 = track.getCapabilities ? track.getCapabilities() : {};
+      if(caps3.torch){
+        torchBtn.style.display = "inline-block";
+        var torchOn = false;
+        torchBtn.onclick = function(){
+          torchOn = !torchOn;
+          try{ track.applyConstraints({advanced:[{torch:torchOn}]}); }catch(e){}
+          torchBtn.textContent = torchOn ? "🔦 OFF" : "🔦 ON";
+        };
+      }
     }
 
-    // Tap to focus - works on OnePlus & Redmi
+    // Tap to focus
     video.onclick = video.ontouchend = function(e){
       e.preventDefault();
       var clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX) || 0;
@@ -11642,16 +11657,14 @@ function startScanner(){
       if(ring){
         ring.style.left = clientX+"px";
         ring.style.top  = clientY+"px";
-        ring.style.display = "block";
-        ring.style.opacity = "1";
-        setTimeout(function(){ ring.style.opacity="0"; setTimeout(function(){ ring.style.display="none"; },300); }, 800);
+        ring.style.display="block"; ring.style.opacity="1";
+        setTimeout(function(){ ring.style.opacity="0"; setTimeout(function(){ ring.style.display="none"; },300); },800);
       }
       var rect = video.getBoundingClientRect();
-      var x = Math.max(0, Math.min(1, (clientX-rect.left)/rect.width));
-      var y = Math.max(0, Math.min(1, (clientY-rect.top)/rect.height));
-      // Single shot focus at tap point
+      var x = Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
+      var y = Math.max(0,Math.min(1,(clientY-rect.top)/rect.height));
       try{
-        track.applyConstraints({advanced:[{focusMode:"single-shot", pointOfInterest:{x:x, y:y}}]})
+        track.applyConstraints({advanced:[{focusMode:"single-shot",pointOfInterest:{x:x,y:y}}]})
         .then(function(){
           setTimeout(function(){
             try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
@@ -11660,58 +11673,53 @@ function startScanner(){
           try{ track.applyConstraints({advanced:[{focusMode:"single-shot"}]}); }catch(e){}
           setTimeout(function(){
             try{ track.applyConstraints({advanced:[{focusMode:"continuous"}]}); }catch(e){}
-          }, 1500);
+          },1500);
         });
       }catch(e){}
     };
 
     // Scan loop
-    var canvas   = document.createElement("canvas");
-    var ctx      = canvas.getContext("2d", {willReadFrequently:true});
+    var canvas  = document.createElement("canvas");
+    var ctx     = canvas.getContext("2d",{willReadFrequently:true});
     var scanning = false;
 
     if("BarcodeDetector" in window){
-      var detector = new BarcodeDetector({
-        formats:["code_128","code_39","code_93","ean_13","ean_8",
-                 "upc_a","upc_e","qr_code","data_matrix","itf","codabar"]
-      });
+      var detector = new BarcodeDetector({formats:[
+        "code_128","code_39","code_93","ean_13","ean_8",
+        "upc_a","upc_e","qr_code","data_matrix","itf","codabar"
+      ]});
       var detect = function(){
         if(!scannerStream) return;
         if(scanning){ scannerRAF = requestAnimationFrame(detect); return; }
         if(video.readyState === video.HAVE_ENOUGH_DATA){
           canvas.width  = video.videoWidth;
           canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0);
+          ctx.drawImage(video,0,0);
           scanning = true;
           detector.detect(canvas).then(function(codes){
             scanning = false;
-            if(codes.length > 0){
-              onBarcodeFound(codes[0].rawValue);
-            } else {
-              // jsQR fallback
+            if(codes.length > 0){ onBarcodeFound(codes[0].rawValue); }
+            else {
               if(typeof jsQR !== "undefined"){
-                var img  = ctx.getImageData(0,0,canvas.width,canvas.height);
-                var code = jsQR(img.data, img.width, img.height, {inversionAttempts:"attemptBoth"});
+                var img = ctx.getImageData(0,0,canvas.width,canvas.height);
+                var code = jsQR(img.data,img.width,img.height,{inversionAttempts:"attemptBoth"});
                 if(code){ onBarcodeFound(code.data); return; }
               }
               scannerRAF = requestAnimationFrame(detect);
             }
-          }).catch(function(){ scanning=false; scannerRAF = requestAnimationFrame(detect); });
-        } else {
-          scannerRAF = requestAnimationFrame(detect);
-        }
+          }).catch(function(){ scanning=false; scannerRAF=requestAnimationFrame(detect); });
+        } else { scannerRAF = requestAnimationFrame(detect); }
       };
       scannerRAF = requestAnimationFrame(detect);
     } else {
       var detect2 = function(){
         if(!scannerStream) return;
         if(video.readyState === video.HAVE_ENOUGH_DATA){
-          canvas.width  = video.videoWidth;
-          canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0);
+          canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+          ctx.drawImage(video,0,0);
           if(typeof jsQR !== "undefined"){
-            var img  = ctx.getImageData(0,0,canvas.width,canvas.height);
-            var code = jsQR(img.data, img.width, img.height, {inversionAttempts:"attemptBoth"});
+            var img=ctx.getImageData(0,0,canvas.width,canvas.height);
+            var code=jsQR(img.data,img.width,img.height,{inversionAttempts:"attemptBoth"});
             if(code){ onBarcodeFound(code.data); return; }
           }
         }
@@ -11720,7 +11728,7 @@ function startScanner(){
       scannerRAF = requestAnimationFrame(detect2);
     }
   }).catch(function(err){
-    if(status) status.textContent = "Camera error - use 📸 Take Photo below";
+    if(status) status.textContent = "Camera error - type barcode below";
   });
 }
 
