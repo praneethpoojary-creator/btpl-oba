@@ -11536,23 +11536,14 @@ var scannerRAF      = null;
 
 function openScanner(inputId, label){
   scannerTargetId = inputId;
-  // Directly trigger photo capture - best focus on OnePlus/Redmi
-  var photoInput = document.createElement("input");
-  photoInput.type = "file";
-  photoInput.accept = "image/*";
-  photoInput.capture = "environment";
-  photoInput.onchange = function(){ scanFromPhoto(this); };
-  photoInput.click();
-  
-  // Also show modal as fallback
   var labelEl = document.getElementById("scannerLabel");
   var modal   = document.getElementById("scannerModal");
   var status  = document.getElementById("scannerStatus");
   var manual  = document.getElementById("manualBarcode");
-  if(!modal) return;
+  if(!modal){ alert("Scanner not ready"); return; }
   if(labelEl) labelEl.textContent = label;
   if(manual)  manual.value = "";
-  if(status)  status.textContent = "Or use live camera below...";
+  if(status)  status.textContent = "Starting camera...";
   modal.classList.add("active");
   modal.style.display = "flex";
   startScanner();
@@ -11584,7 +11575,19 @@ function startScanner(){
   .then(function(stream){
     scannerStream = stream;
     video.srcObject = stream;
-    video.play();
+    video.play().then(function(){
+      // Use ImageCapture API for better focus - works on OnePlus/Redmi
+      var track2 = stream.getVideoTracks()[0];
+      if(typeof ImageCapture !== "undefined"){
+        var imageCapture = new ImageCapture(track2);
+        // Grab frame to force focus
+        var grabInterval = setInterval(function(){
+          if(!scannerStream){ clearInterval(grabInterval); return; }
+          imageCapture.grabFrame().catch(function(){});
+        }, 1000);
+        window._grabInterval = grabInterval;
+      }
+    }).catch(function(){});
 
     var track = stream.getVideoTracks()[0];
     var caps  = track.getCapabilities ? track.getCapabilities() : {};
