@@ -10716,7 +10716,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
 
 <div class="auto-bar">
   <span style="font-size:11px;color:#555;">Auto Mode:</span>
-  <span class="spill five" id="spill">&#128309; 5 Samples</span>
+  <span class="spill five" id="spill">&#128309; 10 Samples</span>
   <span style="font-size:11px;color:#999;" id="shint">Enter Quantity to auto-switch samples</span>
 </div>
 
@@ -11028,7 +11028,7 @@ const CPS = [
   "Check for Quality alert if any"
 ];
 
-let N = 5, STATUS = '';
+let N = 10, STATUS = '';
 
 function onQty() {
   const q = parseInt(document.getElementById("quantity").value)||0;
@@ -11037,8 +11037,8 @@ function onQty() {
   document.getElementById("lotVal").value = N + " Nos";
   const sp = document.getElementById("spill");
   if(!q){ sp.textContent="-- Enter Qty"; sp.className="spill five"; }
-  else if(N===5){ sp.textContent="5 Samples (Qty <= 500)"; sp.className="spill five"; }
-  else { sp.textContent="10 Samples (Qty > 500)"; sp.className="spill ten"; }
+  else if(N===5){ sp.textContent="10 Samples (Qty <= 500)"; sp.className="spill five"; }
+  else { sp.textContent="15 Samples (Qty > 500)"; sp.className="spill ten"; }
 }
 
 function togStatus(t) {
@@ -11817,7 +11817,7 @@ function showApp(username, role){
     
     document.getElementById("date").value = new Date().toISOString().slice(0,10);
     loadDriveLog();
-    buildTable(5);
+    buildTable(10);
   } catch(err){
     console.error("showApp error:", err);
     alert("Login error: " + err.message);
@@ -12254,9 +12254,9 @@ function doReset(){
   var lotVal = document.getElementById("lotVal");
   if(lotVal) lotVal.value="";
   var spill = document.getElementById("spill");
-  if(spill){ spill.textContent="5 Samples"; spill.className="spill five"; }
+  if(spill){ spill.textContent="10 Samples"; spill.className="spill five"; }
   // Rebuild table
-  buildTable(5);
+  buildTable(10);
   // Reset upload status
   setStatus("","");
   loadDriveLog();
@@ -12335,7 +12335,7 @@ function buildPDFDoc(){
   T(gv("quantity"),fx+1.5,y+7.5,8,BLK,true);
   fx+=c3w; LN(fx,y,fx,y+r1H);
   // Sampling note
-  TW("Sampling Size : For Lot size upto 500 - Sample size for OBA Inspection is 05Nos  For Lot size above 1000 - Sample size for OBA Inspection is 10Nos",fx+1.5,y+3.5,6,[80,60,0],false,c4w-3);
+  TW("Sampling Size : For Lot size upto 500 - Sample size for OBA Inspection is 05Nos  For Lot size above 500 - Sample size for OBA Inspection is 15Nos",fx+1.5,y+3.5,6,[80,60,0],false,c4w-3);
   fx+=c4w; LN(fx,y,fx,y+r1H);
   // Date
   T("Date",fx+1.5,y+3.5,7,GRY,true);
