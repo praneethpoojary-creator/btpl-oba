@@ -12456,17 +12456,21 @@ function buildPDFDoc(){
   // Sample label sub-row + barcode sub-row
   for(let i=0;i<n;i++){
     const sx=M+slW+cpW+i*sW;
+    // Clamp this column's width so the last column can never round past
+    // the REMARKS boundary (which would silently clip/skip its content).
+    const colRight = (i===n-1) ? (M+slW+cpW+(aw-slW-cpW-remW)) : (sx+sW);
+    const colW = Math.max(0, colRight - sx);
     if(i>0) LN(sx,y,sx,y+thH);
     // Sample label
-    T("Sample "+(i+1)+" :",sx+sW/2,y+thA/2+2,5.5,BLK,true,"center");
+    T("Sample "+(i+1)+" :",sx+colW/2,y+thA/2+2,5.5,BLK,true,"center");
     // Barcode value in lower sub-row
-    const bv=(document.getElementById("bc"+(i+1))||{}).value||"";
+    const bv=((document.getElementById("bc"+(i+1))||{}).value||"").trim();
     if(bv){
       var thB2 = thH - thA;
-      FR(sx+0.5,y+thA+0.5,sW-1,thB2-1,[255,255,255],LGRY);
+      FR(sx+0.5,y+thA+0.5,colW-1,thB2-1,[255,255,255],LGRY);
       // Clip to cell so barcode stays inside
       doc.saveGraphicsState();
-      doc.rect(sx+0.5, y+thA+0.5, sW-1, thB2-1);
+      doc.rect(sx+0.5, y+thA+0.5, colW-1, thB2-1);
       doc.clip();
       doc.discardPath();
       // Font size - auto fit based on available space
@@ -12476,10 +12480,11 @@ function buildPDFDoc(){
       doc.setFontSize(bcFont);
       doc.setTextColor(0,100,0);
       doc.setFont("helvetica","bold");
-      var cx = sx + sW/2;
+      var cx = sx + colW/2;
       var cy = y + thA + thB2/2;
       doc.text(bv, cx, cy, {
         align: "center",
+
         baseline: "middle",
         angle: 90,
         maxWidth: thB2 - 2
@@ -12510,14 +12515,16 @@ function buildPDFDoc(){
     const grps=[...tr.querySelectorAll(".okgrp")];
     grps.forEach((g,si)=>{
       const sx=M+slW+cpW+si*sW;
+      const colRight = (si===n-1) ? (M+slW+cpW+(aw-slW-cpW-remW)) : (sx+sW);
+      const colW = Math.max(0, colRight - sx);
       if(si>0) LN(sx,y,sx,y+cpRH);
       const okA=g.querySelector(".ok-on"), nokA=g.querySelector(".nok-on");
       if(okA){
-        doc.setFillColor(76,175,80);doc.roundedRect(sx+0.8,y+1,sW-1.6,cpRH-2,1,1,"F");
-        T("OK",sx+sW/2,y+cpRH/2+2,7,WHT,true,"center");
+        doc.setFillColor(76,175,80);doc.roundedRect(sx+0.8,y+1,colW-1.6,cpRH-2,1,1,"F");
+        T("OK",sx+colW/2,y+cpRH/2+2,7,WHT,true,"center");
       } else if(nokA){
-        doc.setFillColor(220,38,38);doc.roundedRect(sx+0.8,y+1,sW-1.6,cpRH-2,1,1,"F");
-        T("NOT OK",sx+sW/2,y+cpRH/2+2,5.5,WHT,true,"center");
+        doc.setFillColor(220,38,38);doc.roundedRect(sx+0.8,y+1,colW-1.6,cpRH-2,1,1,"F");
+        T("NOT OK",sx+colW/2,y+cpRH/2+2,5.5,WHT,true,"center");
       }
     });
     LN(M+slW+cpW+sW*n,y,M+slW+cpW+sW*n,y+cpRH);
