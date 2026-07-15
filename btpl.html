@@ -12473,21 +12473,28 @@ function buildPDFDoc(){
       doc.rect(sx+0.5, y+thA+0.5, colW-1, thB2-1);
       doc.clip();
       doc.discardPath();
-      // Font size - auto fit based on available space
-      var maxH = thB2 - 2;
-      var bcFont = Math.min(7, Math.floor(maxH * 0.45));
-      bcFont = Math.max(4, bcFont);
-      doc.setFontSize(bcFont);
-      doc.setTextColor(0,100,0);
+      // Fit font size so the WHOLE barcode renders on a single line.
+      // (Previously we passed maxWidth to doc.text(), which silently
+      // auto-wraps long text onto a 2nd line. Because the text is
+      // rotated 90 degrees, that "2nd line" doesn't drop below - it
+      // shifts sideways into the neighboring column, which is exactly
+      // why barcodes looked shifted / out of their own cells.)
       doc.setFont("helvetica","bold");
+      var availLen = thB2 - 2;
+      var bcFont = 7;
+      doc.setFontSize(bcFont);
+      while(bcFont > 3 && doc.getTextWidth(bv) > availLen){
+        bcFont -= 0.25;
+        doc.setFontSize(bcFont);
+      }
+      doc.setTextColor(0,100,0);
       var cx = sx + colW/2;
       var cy = y + thA + thB2/2;
       doc.text(bv, cx, cy, {
         align: "center",
-
         baseline: "middle",
-        angle: 90,
-        maxWidth: thB2 - 2
+        angle: 90
+        // no maxWidth here on purpose - see note above
       });
       doc.restoreGraphicsState();
     } else {
@@ -12499,14 +12506,18 @@ function buildPDFDoc(){
       doc.rect(sx+0.5, y+thA+0.5, colW-1, thB2b-1);
       doc.clip();
       doc.discardPath();
-      doc.setFontSize(5.5);
-      doc.setTextColor(192,0,0);
       doc.setFont("helvetica","bold");
+      var naFont = 5.5;
+      doc.setFontSize(naFont);
+      while(naFont > 3 && doc.getTextWidth("NOT SCANNED") > (thB2b - 2)){
+        naFont -= 0.25;
+        doc.setFontSize(naFont);
+      }
+      doc.setTextColor(192,0,0);
       doc.text("NOT SCANNED", sx+colW/2, y+thA+thB2b/2, {
         align: "center",
         baseline: "middle",
-        angle: 90,
-        maxWidth: thB2b - 2
+        angle: 90
       });
       doc.restoreGraphicsState();
     }
