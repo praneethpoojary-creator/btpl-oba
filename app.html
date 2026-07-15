@@ -12384,8 +12384,8 @@ function buildPDFDoc(){
 
   // --- HEADER ROW: SL NO | Check points | OK/NOT OK | REMARKS -
   // These 3 cells span vertically over 2 sub-rows (sample label + barcode)
-  const thH=n>10?22:18; // total header height
-  const thA=n>10?5:6;  // sample label sub-row
+  const thH=n>10?30:22; // total header height
+  const thA=n>10?6:7;  // sample label sub-row
   const thB=thH-thA; // barcode sub-row
 
   // outer border
@@ -12417,20 +12417,22 @@ function buildPDFDoc(){
     const bv=(document.getElementById("bc"+(i+1))||{}).value||"";
     if(bv){
       FR(sx+0.5,y+thA+0.5,sW-1,thB-1,[255,255,255],LGRY);
-      // Show barcode VERTICALLY - rotates 90 degrees
-      var bcFont = bv.length > 12 ? 4.5 : bv.length > 9 ? 5 : 5.5;
+      // Show barcode VERTICALLY - fits inside cell
+      var thB2 = thH - thA;
+      // Font size based on barcode length vs available height
+      var bcFont = bv.length > 14 ? 5 : bv.length > 10 ? 6 : 7;
       doc.setFontSize(bcFont);
       doc.setTextColor(0,100,0);
       doc.setFont("helvetica","bold");
-      // Save state, rotate, draw, restore
-      doc.saveGraphicsState();
+      // Center of barcode cell
       var cx = sx + sW/2;
-      var cy = y + thA + thB/2;
+      var cy = y + thA + thB2/2;
       doc.text(bv, cx, cy, {
         align: "center",
-        angle: 90
+        baseline: "middle",
+        angle: 90,
+        maxWidth: thB2 - 2
       });
-      doc.restoreGraphicsState();
     }
   }
   y+=thH;
