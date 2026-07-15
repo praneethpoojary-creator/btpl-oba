@@ -10763,7 +10763,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
       <input type="text" id="partNo" placeholder="—" style="flex:1;border:none;border-bottom:1.5px solid #aaa;background:#f9f9f9;font-size:12px;padding:2px 3px;outline:none;color:#888;">
     </div>
     <div class="x-cell" style="flex:0.65"><span class="lbl">Quantity :</span><input type="number" id="quantity" placeholder="e.g.300" oninput="onQty()"></div>
-    <div class="x-cell" style="flex:1.8;"><span class="note-text"><b>Sampling Size :</b><br>Lot upto 500 &rarr; 5 Nos<br>Lot above 1000 &rarr; 10 Nos</span></div>
+    <div class="x-cell" style="flex:1.8;"><span class="note-text"><b>Sampling Size :</b><br>Lot upto 500 &rarr; 10 Nos<br>Lot above 500 &rarr; 15 Nos</span></div>
     <div class="x-cell" style="flex:0.85"><span class="lbl">Date :</span><input type="date" id="date" readonly style="color:#1a3a6b;font-weight:700;background:transparent;border:none;border-bottom:1.5px solid #aaa;font-size:12px;padding:2px 3px;"></div>
   </div>
 
@@ -12335,7 +12335,7 @@ function buildPDFDoc(){
   T(gv("quantity"),fx+1.5,y+7.5,8,BLK,true);
   fx+=c3w; LN(fx,y,fx,y+r1H);
   // Sampling note
-  TW("Sampling Size : For Lot size upto 500 - Sample size for OBA Inspection is 05Nos  For Lot size above 1000 - Sample size for OBA Inspection is 10Nos",fx+1.5,y+3.5,6,[80,60,0],false,c4w-3);
+  TW("Sampling Size : For Lot size upto 500 - Sample size is 10 Nos  |  For Lot size above 500 - Sample size is 15 Nos",fx+1.5,y+3.5,6,[80,60,0],false,c4w-3);
   fx+=c4w; LN(fx,y,fx,y+r1H);
   // Date
   T("Date",fx+1.5,y+3.5,7,GRY,true);
