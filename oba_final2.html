@@ -12384,8 +12384,8 @@ function buildPDFDoc(){
 
   // --- HEADER ROW: SL NO | Check points | OK/NOT OK | REMARKS -
   // These 3 cells span vertically over 2 sub-rows (sample label + barcode)
-  const thH=13; // total header height
-  const thA=6;  // sample label sub-row
+  const thH=n>10?22:18; // total header height
+  const thA=n>10?5:6;  // sample label sub-row
   const thB=thH-thA; // barcode sub-row
 
   // outer border
