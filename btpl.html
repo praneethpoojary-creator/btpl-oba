@@ -12490,6 +12490,25 @@ function buildPDFDoc(){
         maxWidth: thB2 - 2
       });
       doc.restoreGraphicsState();
+    } else {
+      // Make a missing scan impossible to miss / mistake for a rendering
+      // glitch: flag it loudly instead of leaving the cell blank.
+      var thB2b = thH - thA;
+      FR(sx+0.5,y+thA+0.5,colW-1,thB2b-1,[255,235,235],[192,0,0]);
+      doc.saveGraphicsState();
+      doc.rect(sx+0.5, y+thA+0.5, colW-1, thB2b-1);
+      doc.clip();
+      doc.discardPath();
+      doc.setFontSize(5.5);
+      doc.setTextColor(192,0,0);
+      doc.setFont("helvetica","bold");
+      doc.text("NOT SCANNED", sx+colW/2, y+thA+thB2b/2, {
+        align: "center",
+        baseline: "middle",
+        angle: 90,
+        maxWidth: thB2b - 2
+      });
+      doc.restoreGraphicsState();
     }
   }
   y+=thH;
