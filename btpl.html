@@ -12500,9 +12500,9 @@ function buildPDFDoc(){
   const fc1=aw*0.4, fc2=aw*0.3;
   LN(M+fc1,footY,M+fc1,footY+ftH);
   LN(M+fc1+fc2,footY,M+fc1+fc2,footY+ftH);
-  T("BTPL-QA-FMT-32",M+3,footY+ftH/2+2.5,8,BLK,true);
-  T("Rev No. : 01",M+fc1+3,footY+ftH/2+2.5,8,BLK,true);
-  T("Date : 02-03-2026",M+fc1+fc2+3,footY+ftH/2+2.5,8,BLK,true);
+  T("BTPL-QA-FMT-032",M+3,footY+ftH/2+2.5,8,BLK,true);
+  T("Rev No. : 00",M+fc1+3,footY+ftH/2+2.5,8,BLK,true);
+  T("Date : 30-08-2025",M+fc1+fc2+3,footY+ftH/2+2.5,8,BLK,true);
 
   const ds=gv("date")||new Date().toISOString().slice(0,10);
   const ms=(gv("modelName")||"OBA").replace(/\s+/g,"_");
