@@ -10716,7 +10716,7 @@ body { font-family: Arial, sans-serif; font-size: 13px; background: #d0d0d0; col
 
 <div class="auto-bar">
   <span style="font-size:11px;color:#555;">Auto Mode:</span>
-  <span class="spill five" id="spill">&#128309; 10 Samples</span>
+  <span class="spill five" id="spill">&#128309; 5 Samples</span>
   <span style="font-size:11px;color:#999;" id="shint">Enter Quantity to auto-switch samples</span>
 </div>
 
@@ -11028,7 +11028,7 @@ const CPS = [
   "Check for Quality alert if any"
 ];
 
-let N = 10, STATUS = '';
+let N = 5, STATUS = '';
 
 function onQty() {
   const q = parseInt(document.getElementById("quantity").value)||0;
@@ -11037,8 +11037,8 @@ function onQty() {
   document.getElementById("lotVal").value = N + " Nos";
   const sp = document.getElementById("spill");
   if(!q){ sp.textContent="-- Enter Qty"; sp.className="spill five"; }
-  else if(N===5){ sp.textContent="10 Samples (Qty <= 500)"; sp.className="spill five"; }
-  else { sp.textContent="15 Samples (Qty > 500)"; sp.className="spill ten"; }
+  else if(N===5){ sp.textContent="5 Samples (Qty <= 500)"; sp.className="spill five"; }
+  else { sp.textContent="10 Samples (Qty > 500)"; sp.className="spill ten"; }
 }
 
 function togStatus(t) {
@@ -11817,7 +11817,7 @@ function showApp(username, role){
     
     document.getElementById("date").value = new Date().toISOString().slice(0,10);
     loadDriveLog();
-    buildTable(10);
+    buildTable(5);
   } catch(err){
     console.error("showApp error:", err);
     alert("Login error: " + err.message);
@@ -12254,9 +12254,9 @@ function doReset(){
   var lotVal = document.getElementById("lotVal");
   if(lotVal) lotVal.value="";
   var spill = document.getElementById("spill");
-  if(spill){ spill.textContent="10 Samples"; spill.className="spill five"; }
+  if(spill){ spill.textContent="5 Samples"; spill.className="spill five"; }
   // Rebuild table
-  buildTable(10);
+  buildTable(5);
   // Reset upload status
   setStatus("","");
   loadDriveLog();
@@ -12267,7 +12267,7 @@ function buildPDFDoc(){
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:"landscape", unit:"mm", format:"a4"});
   const PW=doc.internal.pageSize.getWidth(), PH=doc.internal.pageSize.getHeight();
-  const M=6, n=N;
+  const M=4, n=N;
   let y=M;
   const aw=PW-M*2;
 
@@ -12335,7 +12335,7 @@ function buildPDFDoc(){
   T(gv("quantity"),fx+1.5,y+7.5,8,BLK,true);
   fx+=c3w; LN(fx,y,fx,y+r1H);
   // Sampling note
-  TW("Sampling Size : For Lot size upto 500 - Sample size for OBA Inspection is 05Nos  For Lot size above 500 - Sample size for OBA Inspection is 15Nos",fx+1.5,y+3.5,6,[80,60,0],false,c4w-3);
+  TW("Sampling Size : For Lot size upto 500 - Sample size for OBA Inspection is 05Nos  For Lot size above 1000 - Sample size for OBA Inspection is 10Nos",fx+1.5,y+3.5,6,[80,60,0],false,c4w-3);
   fx+=c4w; LN(fx,y,fx,y+r1H);
   // Date
   T("Date",fx+1.5,y+3.5,7,GRY,true);
@@ -12379,13 +12379,13 @@ function buildPDFDoc(){
   y+=r2H;
 
   // --- TABLE COLUMNS setup -------------------------------------
-  const slW=14, cpW=58, remW=22;
+  const slW=10, cpW=50, remW=18;
   const sW=(aw-slW-cpW-remW)/n;
 
   // --- HEADER ROW: SL NO | Check points | OK/NOT OK | REMARKS -
   // These 3 cells span vertically over 2 sub-rows (sample label + barcode)
-  const thH=13; // total header height
-  const thA=6;  // sample label sub-row
+  const thH=n>10?11:13; // total header height
+  const thA=n>10?5:6;  // sample label sub-row
   const thB=thH-thA; // barcode sub-row
 
   // outer border
@@ -12412,7 +12412,7 @@ function buildPDFDoc(){
     const sx=M+slW+cpW+i*sW;
     if(i>0) LN(sx,y,sx,y+thH);
     // Sample label
-    T("Sample "+(i+1)+" :",sx+sW/2,y+thA/2+2,5.5,BLK,true,"center");
+    T(n>10?"S"+(i+1):"Sample "+(i+1)+" :",sx+sW/2,y+thA/2+2,n>10?5:5.5,BLK,true,"center");
     // Barcode value in lower sub-row
     const bv=(document.getElementById("bc"+(i+1))||{}).value||"";
     if(bv){
@@ -12437,7 +12437,7 @@ function buildPDFDoc(){
     "Check for outer box label",
     "Check for Quality alert if any"
   ];
-  const cpRH=8;
+  const cpRH=n>10?6:8;
   const trows=[...document.querySelectorAll("#xbody tr")];
   trows.forEach((tr,ri)=>{
     FR(M,y,aw,cpRH,WHT,GRY);
@@ -12465,7 +12465,7 @@ function buildPDFDoc(){
   });
 
   // --- NOTE / NC / VERIFIED -----------------------------------
-  const btH=6.5;
+  const btH=n>10?5:6.5;
   FR(M,y,aw,btH,YEL,GRY);
   T("Note : If any Non-Conformance observed, Reject & Re-inspect the Lot",M+2,y+btH/2+2,7.5,RED,true);
   y+=btH;
