@@ -12607,11 +12607,16 @@ function validateForm(){
     window.showToast("Required: NC Details (Inspection Rejected)", true);
     document.getElementById("ncDet").focus(); return false;
   }
-  // Check all checkpoints filled
+  // Check all checkpoints filled (every sample column, not just any one)
   var cpRows = document.querySelectorAll("#xbody tr");
   for(var ri=0; ri<cpRows.length; ri++){
-    if(!cpRows[ri].querySelector(".ok-on,.nok-on")){
-      window.showToast("Fill checkpoint " + (ri+1), true);
+    var groups = cpRows[ri].querySelectorAll(".okgrp");
+    var missingSample = -1;
+    for(var si=0; si<groups.length; si++){
+      if(!groups[si].querySelector(".ok-on,.nok-on")){ missingSample = si; break; }
+    }
+    if(missingSample !== -1){
+      window.showToast("Fill checkpoint " + (ri+1) + " - Sample " + (missingSample+1), true);
       cpRows[ri].scrollIntoView({behavior:"smooth"}); return false;
     }
     if(cpRows[ri].querySelector(".nok-on")){
@@ -12711,9 +12716,13 @@ async function doSubmit(){
   // -- Validate all checkpoints filled ----------------------
   var cpRows = document.querySelectorAll("#xbody tr");
   for(var ri=0; ri<cpRows.length; ri++){
-    var hasAny = cpRows[ri].querySelector(".ok-on,.nok-on");
-    if(!hasAny){
-      showToast("⚠ Fill checkpoint " + (ri+1), true);
+    var groups = cpRows[ri].querySelectorAll(".okgrp");
+    var missingSample = -1;
+    for(var si=0; si<groups.length; si++){
+      if(!groups[si].querySelector(".ok-on,.nok-on")){ missingSample = si; break; }
+    }
+    if(missingSample !== -1){
+      showToast("⚠ Fill checkpoint " + (ri+1) + " - Sample " + (missingSample+1), true);
       cpRows[ri].scrollIntoView({behavior:"smooth"});
       return;
     }
