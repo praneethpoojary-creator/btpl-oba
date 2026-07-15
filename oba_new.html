@@ -12416,15 +12416,19 @@ function buildPDFDoc(){
     // Barcode value in lower sub-row
     const bv=(document.getElementById("bc"+(i+1))||{}).value||"";
     if(bv){
-      FR(sx+0.5,y+thA+0.5,sW-1,thB-1,[255,255,255],LGRY);
-      // Show barcode VERTICALLY - fits inside cell
       var thB2 = thH - thA;
-      // Font size based on barcode length vs available height
-      var bcFont = bv.length > 14 ? 5 : bv.length > 10 ? 6 : 7;
+      FR(sx+0.5,y+thA+0.5,sW-1,thB2-1,[255,255,255],LGRY);
+      // Clip to cell so barcode stays inside
+      doc.saveGraphicsState();
+      doc.rect(sx+0.5, y+thA+0.5, sW-1, thB2-1);
+      doc.clip();
+      // Font size - auto fit based on available space
+      var maxH = thB2 - 2;
+      var bcFont = Math.min(7, Math.floor(maxH * 0.45));
+      bcFont = Math.max(4, bcFont);
       doc.setFontSize(bcFont);
       doc.setTextColor(0,100,0);
       doc.setFont("helvetica","bold");
-      // Center of barcode cell
       var cx = sx + sW/2;
       var cy = y + thA + thB2/2;
       doc.text(bv, cx, cy, {
@@ -12433,6 +12437,7 @@ function buildPDFDoc(){
         angle: 90,
         maxWidth: thB2 - 2
       });
+      doc.restoreGraphicsState();
     }
   }
   y+=thH;
