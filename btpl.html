@@ -12422,6 +12422,7 @@ function buildPDFDoc(){
       doc.saveGraphicsState();
       doc.rect(sx+0.5, y+thA+0.5, sW-1, thB2-1);
       doc.clip();
+      doc.discardPath();
       // Font size - auto fit based on available space
       var maxH = thB2 - 2;
       var bcFont = Math.min(7, Math.floor(maxH * 0.45));
