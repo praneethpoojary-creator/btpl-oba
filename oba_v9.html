@@ -12267,7 +12267,7 @@ function buildPDFDoc(){
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:"landscape", unit:"mm", format:"a4"});
   const PW=doc.internal.pageSize.getWidth(), PH=doc.internal.pageSize.getHeight();
-  const M=4, n=N;
+  const M=6, n=N;
   let y=M;
   const aw=PW-M*2;
 
@@ -12379,13 +12379,13 @@ function buildPDFDoc(){
   y+=r2H;
 
   // --- TABLE COLUMNS setup -------------------------------------
-  const slW=10, cpW=50, remW=18;
+  const slW=14, cpW=58, remW=22;
   const sW=(aw-slW-cpW-remW)/n;
 
   // --- HEADER ROW: SL NO | Check points | OK/NOT OK | REMARKS -
   // These 3 cells span vertically over 2 sub-rows (sample label + barcode)
-  const thH=n>10?11:13; // total header height
-  const thA=n>10?5:6;  // sample label sub-row
+  const thH=13; // total header height
+  const thA=6;  // sample label sub-row
   const thB=thH-thA; // barcode sub-row
 
   // outer border
@@ -12412,17 +12412,25 @@ function buildPDFDoc(){
     const sx=M+slW+cpW+i*sW;
     if(i>0) LN(sx,y,sx,y+thH);
     // Sample label
-    T(n>10?"S"+(i+1):"Sample "+(i+1)+" :",sx+sW/2,y+thA/2+2,n>10?5:5.5,BLK,true,"center");
+    T("Sample "+(i+1)+" :",sx+sW/2,y+thA/2+2,5.5,BLK,true,"center");
     // Barcode value in lower sub-row
     const bv=(document.getElementById("bc"+(i+1))||{}).value||"";
     if(bv){
       FR(sx+0.5,y+thA+0.5,sW-1,thB-1,[255,255,255],LGRY);
-      // Show full barcode - reduce font size if long
+      // Show barcode VERTICALLY - rotates 90 degrees
       var bcFont = bv.length > 12 ? 4.5 : bv.length > 9 ? 5 : 5.5;
       doc.setFontSize(bcFont);
       doc.setTextColor(0,100,0);
       doc.setFont("helvetica","bold");
-      doc.text(bv, sx+sW/2, y+thA+thB/2+2, {align:"center", maxWidth: sW-1});
+      // Save state, rotate, draw, restore
+      doc.saveGraphicsState();
+      var cx = sx + sW/2;
+      var cy = y + thA + thB/2;
+      doc.text(bv, cx, cy, {
+        align: "center",
+        angle: 90
+      });
+      doc.restoreGraphicsState();
     }
   }
   y+=thH;
@@ -12437,7 +12445,7 @@ function buildPDFDoc(){
     "Check for outer box label",
     "Check for Quality alert if any"
   ];
-  const cpRH=n>10?6:8;
+  const cpRH=8;
   const trows=[...document.querySelectorAll("#xbody tr")];
   trows.forEach((tr,ri)=>{
     FR(M,y,aw,cpRH,WHT,GRY);
@@ -12465,7 +12473,7 @@ function buildPDFDoc(){
   });
 
   // --- NOTE / NC / VERIFIED -----------------------------------
-  const btH=n>10?5:6.5;
+  const btH=6.5;
   FR(M,y,aw,btH,YEL,GRY);
   T("Note : If any Non-Conformance observed, Reject & Re-inspect the Lot",M+2,y+btH/2+2,7.5,RED,true);
   y+=btH;
