@@ -12124,6 +12124,22 @@ function buildTable(n) {
   const body = document.getElementById("xbody");
   const sw = 200;  // 150px per sample - wide barcode + easy OK/NOK
 
+  // --- Preserve any already-entered data before rebuilding -----
+  // Rebuilding (triggered by the qty-based sample-count auto-switch)
+  // used to wipe out every OK/NOT-OK mark, remark, and scanned
+  // barcode by replacing head/body innerHTML outright. Capture the
+  // current state here so it can be restored after the rebuild.
+  const prevRows = [...(body ? body.querySelectorAll("tr") : [])];
+  const savedCheckpoints = prevRows.map(tr => ({
+    remark: (tr.querySelector(".rem-inp") || {}).value,
+    samples: [...tr.querySelectorAll(".okgrp")].map(g => {
+      if (g.querySelector(".ok-on")) return "ok";
+      if (g.querySelector(".nok-on")) return "nok";
+      return null;
+    })
+  }));
+  const prevBarcodes = [...document.querySelectorAll(".bc-inp")].map(inp => inp.value);
+
   // Header: SL NO | Checkpoints | Sample labels + barcode input | REMARKS
   let h = `<tr>
     <th style="width:35px;min-width:35px;" rowspan="2">SL</th>
@@ -12165,6 +12181,36 @@ function buildTable(n) {
     rows+=`<td class="white"><textarea class="rem-inp" rows="2" placeholder="NA" style="color:#aaa;background:#f9f9f9;" readonly>NA</textarea></td></tr>`;
   });
   body.innerHTML = rows;
+
+  // --- Restore preserved data --------------------------------
+  // Checkpoint rows (CPS) are always the same regardless of n, so
+  // restore each row's remark and re-apply OK/NOT-OK marks for
+  // every sample column that still exists (min(oldN, newN)).
+  const newRows = [...body.querySelectorAll("tr")];
+  newRows.forEach((tr, ri) => {
+    const saved = savedCheckpoints[ri];
+    if (!saved) return;
+    const groups = [...tr.querySelectorAll(".okgrp")];
+    saved.samples.forEach((state, si) => {
+      if (!state || !groups[si]) return;
+      const btns = groups[si].querySelectorAll(".okbtn");
+      const target = state === "ok" ? btns[0] : btns[1];
+      if (target) setOK(target, state);
+    });
+    // setOK() above already restores remark box readonly/background
+    // state; now put back the actual remark text if there was one.
+    if (saved.remark !== undefined && saved.remark !== "" && saved.remark !== "NA") {
+      const rem = tr.querySelector(".rem-inp");
+      if (rem) rem.value = saved.remark;
+    }
+  });
+  // Restore barcode values for every sample column that still exists.
+  const newBarcodes = document.querySelectorAll(".bc-inp");
+  prevBarcodes.forEach((val, si) => {
+    if (!val || !newBarcodes[si]) return;
+    newBarcodes[si].value = val;
+    newBarcodes[si].classList.toggle("ok", val.trim().length > 0);
+  });
 }
 
 function setOK(btn,t){
