@@ -11032,13 +11032,13 @@ let N = 5, STATUS = '';
 
 function onQty() {
   const q = parseInt(document.getElementById("quantity").value)||0;
-  const newN = q > 500 ? 10 : 5;
+  const newN = q > 500 ? 15 : 10;
   if(newN !== N){ N = newN; buildTable(N); }
   document.getElementById("lotVal").value = N + " Nos";
   const sp = document.getElementById("spill");
   if(!q){ sp.textContent="-- Enter Qty"; sp.className="spill five"; }
-  else if(N===5){ sp.textContent="5 Samples (Qty <= 500)"; sp.className="spill five"; }
-  else { sp.textContent="10 Samples (Qty > 500)"; sp.className="spill ten"; }
+  else if(N===10){ sp.textContent="10 Samples (Qty <= 500)"; sp.className="spill five"; }
+  else { sp.textContent="15 Samples (Qty > 500)"; sp.className="spill ten"; }
 }
 
 function togStatus(t) {
