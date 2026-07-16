@@ -12490,12 +12490,20 @@ function buildPDFDoc(){
       doc.setTextColor(0,100,0);
       var cx = sx + colW/2;
       var cy = y + thA + thB2/2;
-      doc.text(bv, cx, cy, {
-        align: "center",
-        baseline: "middle",
-        angle: 90
-        // no maxWidth here on purpose - see note above
-      });
+      // IMPORTANT: do NOT use align:"center"/baseline:"middle" with a
+      // rotation angle here. jsPDF computes the align/baseline offset
+      // in the *unrotated* text frame and then only translates (never
+      // rotates) that offset - so "center" ends up shifting the text
+      // sideways in device space instead of along the rotated run,
+      // which is exactly why barcodes were landing outside their own
+      // cell instead of centered under their "Sample N" label (verified
+      // by rendering a real PDF and inspecting it against a crosshair).
+      // Fix: use default align/baseline (anchor = top-left of the
+      // rotated run) and manually add half the text's rendered width
+      // to the y-coordinate before rotation, which correctly centers
+      // it along the rotated (vertical) run.
+      var bcW = doc.getTextWidth(bv);
+      doc.text(bv, cx, cy + bcW/2, { angle: 90 });
       doc.restoreGraphicsState();
     } else {
       // Make a missing scan impossible to miss / mistake for a rendering
@@ -12514,11 +12522,8 @@ function buildPDFDoc(){
         doc.setFontSize(naFont);
       }
       doc.setTextColor(192,0,0);
-      doc.text("NOT SCANNED", sx+colW/2, y+thA+thB2b/2, {
-        align: "center",
-        baseline: "middle",
-        angle: 90
-      });
+      var naW = doc.getTextWidth("NOT SCANNED");
+      doc.text("NOT SCANNED", sx+colW/2, y+thA+thB2b/2 + naW/2, { angle: 90 });
       doc.restoreGraphicsState();
     }
   }
